@@ -40,3 +40,6 @@ class PATRobot(Robot):
                  "samples": r"<b>\s*(?:Sample Input|输入样例)\s*(?P<t_id>\d?).?</b>\s*<pre>([\s\S]*?)</pre>\s+<b>(?:Sample Output|输出样例)\s?(?P=t_id).?</b>\s*<pre>([\s\S]*?)</pre>"}
         return self._regex_page(url, regex)
 
+    def _clean_html_tag(self, text):
+        return re.compile("<p>|</p>|<b>|</b>|\r|\n").sub("", text)
+
