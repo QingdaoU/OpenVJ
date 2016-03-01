@@ -9,3 +9,7 @@ class RequestFailed(Exception):
 
 class RegexError(Exception):
     pass
+
+
+class SubmitProblemFailed(Exception):
+    pass

@@ -1,5 +1,6 @@
 # coding=utf-8
 import re
+import urllib
 import requests
 from .exceptions import RequestFailed, RegexError
 
@@ -24,6 +25,15 @@ class Robot(object):
                   "input_description": String, "output_description": String,
                   "samples": [{"input": String, "output": String}],
                   "time_limit": Int, "memory_limit": Int}
+        """
+        raise NotImplementedError()
+
+    def submit(self, url, language, code):
+        """
+        :param url
+        :param language:
+        :param code:
+        :return: 提交id
         """
         raise NotImplementedError()
 
