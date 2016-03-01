@@ -1,6 +1,6 @@
 # coding=utf-8
 from .robot import Robot
-from .exceptions import LoginFailed
+from .exceptions import AuthFailed
 
 
 class PATRobot(Robot):
@@ -14,6 +14,5 @@ class PATRobot(Robot):
                       headers={"Content-Type": "application/x-www-form-urlencoded",
                                "Referer": "http://www.patest.cn/users/sign_in"})
         if r.status_code != 302:
-            raise LoginFailed()
-        print(123)
+            raise AuthFailed()
         return dict(r.cookies)

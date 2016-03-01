@@ -1,3 +1,7 @@
 # coding=utf-8
-class LoginFailed(Exception):
+class AuthFailed(Exception):
+    pass
+
+
+class RequestFailed(Exception):
     pass

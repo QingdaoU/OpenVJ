@@ -1,6 +1,6 @@
 # coding=utf-8
 import requests
-
+from .exceptions import RequestFailed
 
 class Robot(object):
     def __init__(self, cookies=None):
@@ -22,10 +22,10 @@ class Robot(object):
         if kwargs["headers"] is None:
             kwargs["headers"] = {}
 
-        _cookies = kwargs.pop("cookies")
-        if _cookies is not None:
+        cookies = kwargs.pop("cookies")
+        if cookies is not None:
             kwargs["headers"]["Cookies"] = ""
-            for k, v in _cookies.items():
+            for k, v in cookies.items():
                 kwargs["headers"]["Cookies"] += (k + "=" + v + "; ")
 
         common_headers = {"Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
@@ -36,8 +36,14 @@ class Robot(object):
         for k, v in common_headers.items():
             if k not in kwargs["headers"]:
                 kwargs["headers"][k] = v
-        print(kwargs["headers"])
-        return requests.request(method, url, **kwargs)
+        retries = 3
+        while True:
+            try:
+                return requests.request(method, url, **kwargs)
+            except requests.RequestException as e:
+                if retries == 0:
+                    raise RequestFailed(e)
+                retries -= 1
 
     def get(self, url, headers=None, cookies=None, allow_redirects=False):
         return self._request("get", url, headers=headers, allow_redirects=allow_redirects)
