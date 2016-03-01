@@ -20,7 +20,7 @@ class Robot(object):
 
     def get_problem(self, url):
         """
-        :return: {"title": String, "description": String,
+        :return: {"id": String(pat-a-1001/hdu-1002), "title": String, "description": String,
                   "input_description": String, "output_description": String,
                   "samples": [{"input": String, "output": String}],
                   "time_limit": Int, "memory_limit": Int}

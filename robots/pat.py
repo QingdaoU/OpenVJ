@@ -31,6 +31,9 @@ class PATRobot(Robot):
         return r.status_code == 200
 
     def get_problem(self, url):
+        if not self.check_url(url):
+            raise RequestFailed("Invalid PAT url")
+        problem_id = "pat-" + "-".join(re.compile("^http://www.patest.cn/contests/pat-(a|b|t)-practise/(\d{4})$").findall(url)[0])
         regex = {"title": r"<div id=\"body\" class=\"span-22 last\">\s*<h1>(.*)</h1>",
                  "time_limit": r"<div class='key'>\s*时间限制\s*</div>\s*<div class='value'>\s*(\d+) ms",
                  "memory_limit": r"<div class='key'>\s*内存限制\s*</div>\s*<div class='value'>\s*(\d+) kB",
@@ -38,7 +41,9 @@ class PATRobot(Robot):
                  "input_description": r"<b>\s*(?:Input|Input Specification:|输入格式：)\s*</b>([\s\S]*?)<b>\s*(?:Output|Output Specification:|输出格式：)\s*</b>",
                  "output_description": r"<b>\s*(?:Output|Output Specification:|输出格式：)\s*</b>([\s\S]*?)<b>\s*(?:Sample Input|输入样例).*</b>",
                  "samples": r"<b>\s*(?:Sample Input|输入样例)\s*(?P<t_id>\d?).?</b>\s*<pre>([\s\S]*?)</pre>\s+<b>(?:Sample Output|输出样例)\s?(?P=t_id).?</b>\s*<pre>([\s\S]*?)</pre>"}
-        return self._regex_page(url, regex)
+        data= self._regex_page(url, regex)
+        data["id"] = problem_id
+        return data
 
     def _regex_page(self, url, regex):
         r = self.get(url)
