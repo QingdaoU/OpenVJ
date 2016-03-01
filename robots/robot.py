@@ -17,7 +17,7 @@ class Robot(object):
         raise NotImplementedError()
 
     def _request(self, method, url, **kwargs):
-        kwargs["allow_redirects"] = False
+        kwargs["timeout"] = 10
 
         if kwargs["headers"] is None:
             kwargs["headers"] = {}
@@ -39,8 +39,8 @@ class Robot(object):
         print(kwargs["headers"])
         return requests.request(method, url, **kwargs)
 
-    def get(self, url, headers=None, cookies=None):
-        return self._request("get", url, headers=headers)
+    def get(self, url, headers=None, cookies=None, allow_redirects=False):
+        return self._request("get", url, headers=headers, allow_redirects=allow_redirects)
 
-    def post(self, url, data, headers=None, cookies=None):
-        return self._request("post", url, data=data, cookies=cookies, headers=headers)
+    def post(self, url, data, headers=None, cookies=None, allow_redirects=False):
+        return self._request("post", url, data=data, cookies=cookies, headers=headers, allow_redirects=False)
