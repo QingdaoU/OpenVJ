@@ -50,7 +50,10 @@ class Robot(object):
         retries = 3
         while True:
             try:
-                return requests.request(method, url, **kwargs)
+                r = requests.request(method, url, **kwargs)
+                if r.status_code >= 400:
+                    raise RequestFailed("Invalid status code [%d] when fetching url [%s]" % (r.status_code, url))
+                return r
             except requests.RequestException as e:
                 if retries == 0:
                     raise RequestFailed(e)
@@ -63,14 +66,10 @@ class Robot(object):
         return self._request("post", url, data=data, cookies=cookies, headers=headers, allow_redirects=allow_redirects)
 
     def _regex_page(self, url, regex):
-        html = self.get(url).text
+        r = self.get(url)
+        if r.status_code != 200:
+            raise RequestFailed("Invalid status code [%d] when fetching url [%s]" % (r.status_code, url))
         data = {}
         for k, v in regex.items():
-            tmp = re.compile(v).findall(html)
-            # print(tmp)
-            #if len(tmp) != 1:
-            #    raise RegexError("Regex match error, regex '%s' findall return %s results" % (k, len(tmp)))
-            #if isinstance(tmp[0], str):
-            #    tmp[0] = tmp[0].strip()
-            data[k] = tmp
+            data[k] = re.compile(v).findall(r.text)
         return data
