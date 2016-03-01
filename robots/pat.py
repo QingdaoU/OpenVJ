@@ -34,9 +34,9 @@ class PATRobot(Robot):
         regex = {"title": r"<div id=\"body\" class=\"span-22 last\">\s*<h1>(.*)</h1>",
                  "time_limit": r"<div class='key'>\s*时间限制\s*</div>\s*<div class='value'>\s*(\d+) ms",
                  "memory_limit": r"<div class='key'>\s*内存限制\s*</div>\s*<div class='value'>\s*(\d+) kB",
-                 "description": r"<div id='problemContent'>([\s\S]*)<p>\s*<b>\s*Input Specification:",
-                 "input_description": r"<b>\s*Input Specification:\s*</b>\s*</p>([\s\S]*)<p>\s*<b>\s*Output Specification:",
-                 "output_description": r"<b>\s*Output Specification:\s*</b>\s*</p>([\s\S]*?)<b>Sample Input",
-                 "samples": r"<b>Sample Input\s?(\d?):</b>\s*<pre>([\s\S]*?)</pre>\s+<b>Sample Output\s?\1:</b>\s*<pre>([\s\S]*?)</pre>"}
+                 "description": r"<div id='problemContent'>([\s\S]*?)<b>\s*(?:Input|Input Specification:|输入格式：)\s*</b",
+                 "input_description": r"<b>\s*(?:Input|Input Specification:|输入格式：)\s*</b>([\s\S]*?)<b>\s*(?:Output|Output Specification:|输出格式：)\s*</b>",
+                 "output_description": r"<b>\s*(?:Output|Output Specification:|输出格式：)\s*</b>([\s\S]*?)<b>\s*(?:Sample Input|输入样例).*</b>",
+                 "samples": r"<b>\s*(?:Sample Input|输入样例)\s*(?P<t_id>\d?).?</b>\s*<pre>([\s\S]*?)</pre>\s+<b>(?:Sample Output|输出样例)\s?(?P=t_id).?</b>\s*<pre>([\s\S]*?)</pre>"}
         return self._regex_page(url, regex)
 
