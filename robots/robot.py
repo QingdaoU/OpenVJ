@@ -1,10 +1,15 @@
 # coding=utf-8
+import re
 import requests
-from .exceptions import RequestFailed
+from .exceptions import RequestFailed, RegexError
+
 
 class Robot(object):
     def __init__(self, cookies=None):
         self.cookies = cookies if cookies is not None else {}
+
+    def check_url(self, url):
+        raise NotImplementedError()
 
     def login(self, username, password):
         raise NotImplementedError()
@@ -14,6 +19,12 @@ class Robot(object):
         raise NotImplementedError()
 
     def get_problem(self, url):
+        """
+        :return: {"title": String, "description": String,
+                  "input_description": String, "output_description": String,
+                  "samples": [{"input": String, "output": String}],
+                  "time_limit": Int, "memory_limit": Int}
+        """
         raise NotImplementedError()
 
     def _request(self, method, url, **kwargs):
@@ -24,9 +35,9 @@ class Robot(object):
 
         cookies = kwargs.pop("cookies")
         if cookies is not None:
-            kwargs["headers"]["Cookies"] = ""
+            kwargs["headers"]["Cookie"] = ""
             for k, v in cookies.items():
-                kwargs["headers"]["Cookies"] += (k + "=" + v + "; ")
+                kwargs["headers"]["Cookie"] += (k + "=" + v + "; ")
 
         common_headers = {"Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
                           "Accept-Encoding": "gzip, deflate",
@@ -46,7 +57,20 @@ class Robot(object):
                 retries -= 1
 
     def get(self, url, headers=None, cookies=None, allow_redirects=False):
-        return self._request("get", url, headers=headers, allow_redirects=allow_redirects)
+        return self._request("get", url, cookies=cookies, headers=headers, allow_redirects=allow_redirects)
 
     def post(self, url, data, headers=None, cookies=None, allow_redirects=False):
-        return self._request("post", url, data=data, cookies=cookies, headers=headers, allow_redirects=False)
+        return self._request("post", url, data=data, cookies=cookies, headers=headers, allow_redirects=allow_redirects)
+
+    def _regex_page(self, url, regex):
+        html = self.get(url).text
+        data = {}
+        for k, v in regex.items():
+            tmp = re.compile(v).findall(html)
+            # print(tmp)
+            #if len(tmp) != 1:
+            #    raise RegexError("Regex match error, regex '%s' findall return %s results" % (k, len(tmp)))
+            #if isinstance(tmp[0], str):
+            #    tmp[0] = tmp[0].strip()
+            data[k] = tmp
+        return data

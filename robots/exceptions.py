@@ -5,3 +5,7 @@ class AuthFailed(Exception):
 
 class RequestFailed(Exception):
     pass
+
+
+class RegexError(Exception):
+    pass
