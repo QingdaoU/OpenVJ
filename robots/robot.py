@@ -65,11 +65,5 @@ class Robot(object):
     def post(self, url, data, headers=None, cookies=None, allow_redirects=False):
         return self._request("post", url, data=data, cookies=cookies, headers=headers, allow_redirects=allow_redirects)
 
-    def _regex_page(self, url, regex):
-        r = self.get(url)
-        if r.status_code != 200:
-            raise RequestFailed("Invalid status code [%d] when fetching url [%s]" % (r.status_code, url))
-        data = {}
-        for k, v in regex.items():
-            data[k] = re.compile(v).findall(r.text)
-        return data
+    def _clean_html_tag(self, text):
+        return re.compile("<p>|</p>|<b>|</b>|\r|\n").sub("", text)

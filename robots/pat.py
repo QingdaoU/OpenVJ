@@ -1,7 +1,7 @@
 # coding=utf-8
 import re
 from .robot import Robot
-from .exceptions import AuthFailed, RequestFailed
+from .exceptions import AuthFailed, RequestFailed, RegexError
 
 
 class PATRobot(Robot):
@@ -40,6 +40,21 @@ class PATRobot(Robot):
                  "samples": r"<b>\s*(?:Sample Input|输入样例)\s*(?P<t_id>\d?).?</b>\s*<pre>([\s\S]*?)</pre>\s+<b>(?:Sample Output|输出样例)\s?(?P=t_id).?</b>\s*<pre>([\s\S]*?)</pre>"}
         return self._regex_page(url, regex)
 
-    def _clean_html_tag(self, text):
-        return re.compile("<p>|</p>|<b>|</b>|\r|\n").sub("", text)
+    def _regex_page(self, url, regex):
+        r = self.get(url)
+        if r.status_code != 200:
+            raise RequestFailed("Invalid status code [%d] when fetching url [%s]" % (r.status_code, url))
+        data = {}
+        for k, v in regex.items():
+            items = re.compile(v).findall(r.text)
+            if not items:
+                raise RegexError("No such data")
+            if k != "samples":
+                data[k] = self._clean_html_tag(items[0])
+            else:
+                tmp = []
+                for item in items:
+                    tmp.append({"input": self._clean_html_tag(item[1]), "output": self._clean_html_tag(item[2])})
+                data[k] = tmp
+        return data
 
