@@ -1,6 +1,5 @@
 # coding=utf-8
-import re
-import urllib
+import html
 import requests
 from .exceptions import RequestFailed, RegexError
 
@@ -75,8 +74,11 @@ class Robot(object):
     def post(self, url, data, headers=None, cookies=None, allow_redirects=False):
         return self._request("post", url, data=data, cookies=cookies, headers=headers, allow_redirects=allow_redirects)
 
-    def _clean_html_tag(self, text):
-        return re.compile("<p>|</p>|<b>|</b>|\r|\n|<span>|</span>").sub("", text)
+    def _decode_html(self, text):
+        """
+        html实体编码的解码
+        """
+        return html.unescape(text)
 
     def get_result(self, submission_id):
         """
@@ -84,3 +86,8 @@ class Robot(object):
         :return: {"result": Result, "cpu_time": Int, "memory": Int}
         """
         raise NotImplementedError()
+
+    def check_status_code(self, response, status_code=200):
+        if response.status_code != status_code:
+            raise RequestFailed("Invalid status code [%d] when fetching url [%s], expected %d" %
+                                (response.status_code, response.url, status_code))

@@ -57,21 +57,23 @@ class PATRobot(Robot):
         data["id"] = problem_id
         return data
 
+    def _clean_html(self, text):
+        return self._decode_html(re.compile("<p>|</p>|<b>|</b>|\r|\n|<span>|</span>").sub("", text))
+
     def _regex_page(self, url, regex):
         r = self.get(url)
-        if r.status_code != 200:
-            raise RequestFailed("Invalid status code [%d] when fetching url [%s]" % (r.status_code, url))
+        self.check_status_code(r)
         data = {}
         for k, v in regex.items():
             items = re.compile(v).findall(r.text)
             if not items:
                 raise RegexError("No such data")
             if k != "samples":
-                data[k] = self._clean_html_tag(items[0])
+                data[k] = self._clean_html(items[0])
             else:
                 tmp = []
                 for item in items:
-                    tmp.append({"input": self._clean_html_tag(item[1]), "output": self._clean_html_tag(item[2])})
+                    tmp.append({"input": self._clean_html(item[1]), "output": self._clean_html(item[2])})
                 data[k] = tmp
         return data
 
@@ -95,8 +97,7 @@ class PATRobot(Robot):
         r = self.get("http://www.patest.cn/submissions/" + submission_id,
                      cookies=self.cookies,
                      headers={"Referer": "http://www.patest.cn/"})
-        if r.status_code != 200:
-            raise RequestFailed("Failed to get submission result, submission id: %s, status code: %d" % (submission_id, r.status_code))
+        self.check_status_code(r)
         data = re.compile(r"<td>\s*<span class='submitRes-(\d+)'>\s*<a[\s\S]*?>([\s\S]*?)</a>\s*</span>\s*</td>\s*"
                           r"<td>[\s\S]*?</td>\s*"
                           r"<td>[\s\S]*?</td>\s*"
@@ -147,11 +148,8 @@ class PATRobot(Robot):
             r = self.get("http://www.patest.cn/submissions/" + submission_id + "/log",
                          cookies=self.cookies,
                          headers={"Referer": "http://www.patest.cn/"})
-            if r.status_code != 200:
-                raise RequestFailed("Failed to get submission error info, submission id: %s, status code: %d" %
-                                    (submission_id, r.status_code))
-            print(r.text)
-            error = re.compile("<pre>([\s\S]*)</pre>").findall(r.text)[0]
+            self.check_status_code(r)
+            error = self._decode_html(re.compile("<pre>([\s\S]*)</pre>").findall(r.text)[0])
 
         return {"result": result, "cpu_time": cpu_time, "memory": memory,
-                "info": {"result_text": self._clean_html_tag(data[0][1]), "error": error}}
+                "info": {"result_text": self._clean_html(data[0][1]), "error": error}}
