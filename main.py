@@ -1,7 +1,7 @@
 # coding=utf-8
 import time
 from robots.pat import PATRobot
-from robots.utils import LANGUAGE
+from robots.utils import Language
 
 
 p = PATRobot()
@@ -13,4 +13,5 @@ p.login("virusdefender", "092122302asdf")
 #         print("[[[", k, "]]]", v)
 #     time.sleep(3)
 # p.get_token()
-print(p.submit("http://www.patest.cn/contests/32/1001/submit", language=LANGUAGE.C, code="123"))
+#id = p.submit("http://www.patest.cn/contests/32/1001/submit", language=Language.C, code="123")
+print(p.get_result("1680150"))

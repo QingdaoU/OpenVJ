@@ -3,7 +3,7 @@ import re
 import urllib
 from .robot import Robot
 from .exceptions import AuthFailed, RequestFailed, RegexError, SubmitProblemFailed
-from .utils import LANGUAGE
+from .utils import Language, Result
 
 
 class PATRobot(Robot):
@@ -20,7 +20,6 @@ class PATRobot(Robot):
         self.token = re.compile(r"<meta content=\"(.*)\" name=\"csrf-token\" />").findall(r.text)[0]
 
     def login(self, username, password):
-
         r = self.post("http://www.patest.cn/users/sign_in",
                       data={"utf8": "✓",
                             "user[handle]": username,
@@ -31,7 +30,7 @@ class PATRobot(Robot):
                                "Referer": "http://www.patest.cn/users/sign_in"})
         # 登陆成功会重定向到首页,否则200返回错误页面
         if r.status_code != 302:
-            raise AuthFailed()
+            raise AuthFailed("Failed to login PAT")
 
         self.cookies = dict(r.cookies)
         self._get_token()
@@ -77,18 +76,70 @@ class PATRobot(Robot):
         return data
 
     def submit(self, url, language, code):
-        if language == LANGUAGE.C:
-            language = "3"
-        elif language == LANGUAGE.CPP:
-            language = "2"
+        if language == Language.C:
+            compiler_id = "3"
+        elif language == Language.CPP:
+            compiler_id = "2"
         else:
-            language = "10"
-        r = self.post(url, data={"utf8": "✓", "compiler_id": language, "code": code,
+            compiler_id = "10"
+        r = self.post(url, data={"utf8": "✓", "compiler_id": compiler_id, "code": code,
                                  "authenticity_token": self.token},
                       cookies=self.cookies,
                       headers={"Referer": "http://www.patest.cn/",
                                "Content-Type": "application/x-www-form-urlencoded"})
         if r.status_code != 302:
             raise SubmitProblemFailed("Failed to submit problem, url: %s, status code: %d" % (url, r.status_code))
-        return str(re.compile("http://www.patest.cn/submissions/(\d+)").findall(r.headers["Location"])[0])
+        return str(re.compile(r"http://www.patest.cn/submissions/(\d+)").findall(r.headers["Location"])[0])
 
+    def get_result(self, submission_id):
+        r = self.get("http://www.patest.cn/submissions/" + submission_id,
+                     cookies=self.cookies,
+                     headers={"Referer": "http://www.patest.cn/"})
+        if r.status_code != 200:
+            raise RequestFailed("Failed to get submission result, submission id: %s, status code: %d" % (submission_id, r.status_code))
+        data = re.compile(r"<td>\s*<span class='submitRes-(\d+)'>\s*<a[\s\S]*?>([\s\S]*?)</a>\s*</span>\s*</td>\s*"
+                          r"<td>[\s\S]*?</td>\s*"
+                          r"<td>[\s\S]*?</td>\s*"
+                          r"<td>[\s\S]*?</td>\s*"
+                          r"<td>(\d*)</td>\s*"
+                          r"<td>(\d*)</td>").findall(r.text)
+        code = int(data[0][0])
+        # http://www.patest.cn/help
+        # 等待评测 正在评测
+        if code in [0, 1]:
+            result = Result.waiting
+        # 编译错误
+        elif code == 2:
+            result = Result.compile_error
+        # 答案正确
+        elif code == 3:
+            result = Result.accepted
+        # 部分正确 答案错误
+        elif code == [4, 6]:
+            result = Result.wrong_answer
+        # 格式错误
+        elif code == 5:
+            result = Result.format_error
+        # 运行超时
+        elif code == 7:
+            result = Result.time_limit_exceeded
+        # 内存超限
+        elif code == 8:
+            result = Result.memory_limit_exceeded
+        #内部错误
+        elif code == 14:
+            result = Result.system_error
+        # 返回非0 异常退出 段错误 浮点错误 多种错误
+        else:
+            result = Result.runtime_error
+
+        if data[0][2]:
+            cpu_time = int(data[0][2])
+        else:
+            cpu_time = None
+        if data[0][3]:
+            memory = int(data[0][3])
+        else:
+            memory = None
+        return {"result": result, "cpu_time": cpu_time, "memory": memory,
+                "info": {"result_text": self._clean_html_tag(data[0][1])}}

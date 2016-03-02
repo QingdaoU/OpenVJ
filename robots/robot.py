@@ -76,4 +76,11 @@ class Robot(object):
         return self._request("post", url, data=data, cookies=cookies, headers=headers, allow_redirects=allow_redirects)
 
     def _clean_html_tag(self, text):
-        return re.compile("<p>|</p>|<b>|</b>|\r|\n").sub("", text)
+        return re.compile("<p>|</p>|<b>|</b>|\r|\n|<span>|</span>").sub("", text)
+
+    def get_result(self, submission_id):
+        """
+        :param submission_id:
+        :return: {"result": Result, "cpu_time": Int, "memory": Int}
+        """
+        raise NotImplementedError()
