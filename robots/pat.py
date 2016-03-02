@@ -141,5 +141,17 @@ class PATRobot(Robot):
             memory = int(data[0][3])
         else:
             memory = None
+
+        error = None
+        if result == Result.compile_error:
+            r = self.get("http://www.patest.cn/submissions/" + submission_id + "/log",
+                         cookies=self.cookies,
+                         headers={"Referer": "http://www.patest.cn/"})
+            if r.status_code != 200:
+                raise RequestFailed("Failed to get submission error info, submission id: %s, status code: %d" %
+                                    (submission_id, r.status_code))
+            print(r.text)
+            error = re.compile("<pre>([\s\S]*)</pre>").findall(r.text)[0]
+
         return {"result": result, "cpu_time": cpu_time, "memory": memory,
-                "info": {"result_text": self._clean_html_tag(data[0][1])}}
+                "info": {"result_text": self._clean_html_tag(data[0][1]), "error": error}}
