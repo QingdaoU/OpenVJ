@@ -7,12 +7,12 @@ from .exceptions import AuthFailed, RequestFailed, RegexError, SubmitProblemFail
 
 class HDOJRobot(Robot):
     def check_url(self, url):
-        regex = "^http://acm.hdu.edu.cn/showproblem.php?pid=\d{4}1001$"
+        regex = "^http://acm.hdu.edu.cn/showproblem.php?pid=\d{4}$"
         return re.compile(regex).match(url) is not None
 
     def login(self, username, password):
         r = self.post("http://acm.hdu.edu.cn/userloginex.php?action=login",
-                      data={ "user[handle]": username,
+                      data={"user[handle]": username,
                             "user[password]": password,
                             "login": "Sign In"},
                       headers={"Content-Type": "application/x-www-form-urlencoded",
