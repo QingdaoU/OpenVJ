@@ -55,9 +55,6 @@ class PATRobot(Robot):
         data["id"] = problem_id
         return data
 
-    def _clean_html(self, text):
-        return self._decode_html(re.compile("<p>|</p>|<b>|</b>|\r|\n|<span>|</span>").sub("", text))
-
     def _regex_page(self, url, regex):
         r = self.get(url)
         self.check_status_code(r)
