@@ -3,9 +3,10 @@ import re
 import html
 import requests
 from .exceptions import AuthFailed,RequestFailed, RegexError, SubmitProblemFailed
-
+from .utils import Language
 
 class Robot(object):
+
     def __init__(self, cookies=None):
         self.cookies = cookies if cookies is not None else {}
 
@@ -31,61 +32,61 @@ class Robot(object):
 
     @property
     def is_logged_in(self):
-        r = self.post("http://acm.zju.edu.cn/onlinejudge/editProfile.do", self.cookies)
-        return r.status_code == 200
+        r = self.get("http://acm.zju.edu.cn/onlinejudge/editProfile.do", cookies = self.cookies)
+        if re.compile(r"<td align=\"right\">Confirm Password</td>").match(r.text) is not None:
+            return False;
+        return True;
 
     def get_problem(self, url):
-        
-        raise NotImplementedError()
+        if not self.check_url(url):
+            raise RequestFailed("Invalid ZOJ URL!")
+        regex = r"^http://acm.zju.edu.cn/onlinejudge/showProblem.do\?problemCode=\d{4}$"
+        problem_id = re.compile(regex).findall(url)[0][0]
+        regex = {
+                "title": r"<center><span class=\"bigProblemTitle\">.*</span></center>",
+                "time_Limit": r"<font color=\"green\">Time Limit: </font> \d+ Seconds",
+                "memory_limit": r"<font color=\"green\">Memory Limit: </font> 32768 KB",
+                "description": r"",
+                "input_description": r"",
+                "output_description": r"",
+                "samples": r""
+        }
+        data = self._regex_page(url, regex);
+        data.id = problem_id;
+        return data;
+
+    def _regex_page(self, url, regex):
+        r = self.get(url);
+        self.check_status_code(r);
+        data = {}
+        for k,v in regex.items():
+            items = re.compile(v).findall(r.text);
+            if not items:
+                raise RegexError("NO such data!")
+            if(k != "samples"):
+                data[k] = self._clean_html(items[0]);
+            else :
+                tmp = []
+                for()
+
+
+    def _clean_html(self, text):
+        return self._decode_html(re.compile(r"<p>|</p>|<b>|</b>|\r|\n|<span>|</span>").sub("", text));
 
     def submit(self, url, language, code):
-        """
-        提交题目
-        result和language按照utils中转换一下
-        :param url
-        :param language:
-        :param code:
-        :return: 提交id 字符串
-        """
-        raise NotImplementedError()
-
-    def _request(self, method, url, **kwargs):
-        kwargs["timeout"] = 10
-
-        if kwargs["headers"] is None:
-            kwargs["headers"] = {}
-
-        cookies = kwargs.pop("cookies")
-        if cookies is not None:
-            kwargs["headers"]["Cookie"] = ""
-            for k, v in cookies.items():
-                kwargs["headers"]["Cookie"] += (k + "=" + v + "; ")
-
-        common_headers = {"Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-                          "Accept-Encoding": "gzip, deflate",
-                          "Accept-Language": "en-US,en;q=0.8,zh;q=0.6,zh-CN;q=0.4",
-                          "Cache-Control": "no-cache",
-                          "User-Agent": "VirtualJudge"}
-        for k, v in common_headers.items():
-            if k not in kwargs["headers"]:
-                kwargs["headers"][k] = v
-        retries = 3
-        while True:
-            try:
-                r = requests.request(method, url, **kwargs)
-                if r.status_code >= 400:
-                    raSise RequestFailed("Invalid status code [%d] when fetching url [%s]" % (r.status_code, url))
-                return r
-            except requests.RequestException as e:
-                if retries == 0:
-                    raise RequestFailed(e)
-                retries -= 1
-
-    def get(self, url, headers=None, cookies=None, allow_redirects=False):
-        return self._request("get", url, cookies=cookies, headers=headers, allow_redirects=allow_redirects)
-
-    def post(self, url, data, headers=None, cookies=None, allow_redirects=False):
-        return self._request("post", url, data=data, cookies=cookies, headers=headers, allow_redirects=allow_redirects)
+        if language == Language.C:
+            compiler_id = "3"
+        elif language == Language.CPP:
+            compiler_id = "2"
+        else:
+            compiler_id = "10"
+        r = self.post(url, data={"utf8": "✓", "compiler_id": compiler_id, "code": code},
+                      cookies=self.cookies,
+                      headers={"Referer": "http://acm.zju.edu.cn/onlinejudge/submit.do?problemId="+,
+                               "Content-Type": "application/x-www-form-urlencoded"})
+        if r.status_code != 302:
+            raise SubmitProblemFailed("Failed to submit problem, url: %s, status code: %d" % (url, r.status_code))
+        return str(re.compile(r"http://www.patest.cn/submissions/(\d+)").findall(r.headers["Location"])[0])
 
     def _decode_html(self, text):
         """
