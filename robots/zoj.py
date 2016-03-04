@@ -1,19 +1,19 @@
 # coding=utf-8
 import re
 import html
-import requests
+from .robot import Robot
 from .exceptions import AuthFailed,RequestFailed, RegexError, SubmitProblemFailed
 from .utils import Language
 
-class Robot(object):
+class ZOJRobot(Robot):
 
     def __init__(self, cookies=None):
         self.cookies = cookies if cookies is not None else {}
-
+    # OK
     def check_url(self, url):
         regex = r"^http://acm.zju.edu.cn/onlinejudge/showProblem.do\?problemCode=\d{4}$"
-        return re.compile(regex).match(url) is not None;
-
+        return re.compile(regex).match(url) is not None
+    #OK
     def login(self, username, password):
         url = r"http://acm.zju.edu.cn/onlinejudge/login.do"
         data = {
@@ -25,18 +25,20 @@ class Robot(object):
                     "Content-Type": "application/x-www-form-urlencoded",
                     "Referer": "http://acm.zju.edu.cn/onlinejudge/login.do"
         }
-        r = self.post(url, data, headers);
+        r = self.post(url, data, headers)
         if r.status_code is not 302:
-            raise AuthFailed("Failed to login ZOJ!");
-        self.cookies = dict(r.cookies);
+            raise AuthFailed("Failed to login ZOJ!")
+        self.cookies = dict(r.cookies)
 
+    #OK
     @property
     def is_logged_in(self):
         r = self.get("http://acm.zju.edu.cn/onlinejudge/editProfile.do", cookies = self.cookies)
         if re.compile(r"<td align=\"right\">Confirm Password</td>").match(r.text) is not None:
-            return False;
-        return True;
+            return False
+        return True
 
+    #OK
     def get_problem(self, url):
         if not self.check_url(url):
             raise RequestFailed("Invalid ZOJ URL!")
@@ -51,13 +53,13 @@ class Robot(object):
                 "output_description": r"",
                 "samples": r""
         }
-        data = self._regex_page(url, regex);
-        data.id = problem_id;
-        return data;
+        data = self._regex_page(url, regex)
+        data.id = problem_id
+        return data
 
     def _regex_page(self, url, regex):
-        r = self.get(url);
-        self.check_status_code(r);
+        r = self.get(url)
+        self.check_status_code(r)
         data = {}
         for k,v in regex.items():
             items = re.compile(v).findall(r.text);
@@ -67,26 +69,30 @@ class Robot(object):
                 data[k] = self._clean_html(items[0]);
             else :
                 tmp = []
-                for()
-
+                for item in items:
+                    tmp.append({"input": self._clean_html(item[0]), "output": self._clean_html((item[1]))})
+                data[k] = tmp
+        return data
 
     def _clean_html(self, text):
-        return self._decode_html(re.compile(r"<p>|</p>|<b>|</b>|\r|\n|<span>|</span>").sub("", text));
+        return self._decode_html(re.compile(r"<h4>|</h4>|<p>|</p>|<b>|</b>|\r|\n|<span>|</span>").sub("", text));
 
     def submit(self, url, language, code):
         if language == Language.C:
-            compiler_id = "3"
+            compiler_id = "1"
         elif language == Language.CPP:
             compiler_id = "2"
         else:
-            compiler_id = "10"
-        r = self.post(url, data={"utf8": "✓", "compiler_id": compiler_id, "code": code},
+            compiler_id = "4"
+        regex = r"^http://acm.zju.edu.cn/onlinejudge/showProblem.do\?problemCode=\d{4}$"
+        problem_id = re.compile(regex).findall(url)[0][0]
+        r = self.post(url, data={"problemId": problem_id, "languageId": compiler_id, "source": code},
                       cookies=self.cookies,
-                      headers={"Referer": "http://acm.zju.edu.cn/onlinejudge/submit.do?problemId="+,
+                      headers={"Referer": "http://acm.zju.edu.cn/",
                                "Content-Type": "application/x-www-form-urlencoded"})
-        if r.status_code != 302:
+        if r.status_code != 200:
             raise SubmitProblemFailed("Failed to submit problem, url: %s, status code: %d" % (url, r.status_code))
-        return str(re.compile(r"http://www.patest.cn/submissions/(\d+)").findall(r.headers["Location"])[0])
+        return str(re.compile(r"<p>Your source has been submitted. The submission id is <font color='red'>\d+</font>").findall(r.text)[0][0])
 
     def _decode_html(self, text):
         """
@@ -96,15 +102,7 @@ class Robot(object):
         return html.unescape(text)
 
     def get_result(self, submission_id):
-        """
-        获取提交结果
-        result和language按照utils中转换一下
-        返回值中info["error"]只有编译错误的时候才会为字符串,否则为None
-        :param submission_id:
-        :return: {"result": Result, "cpu_time": Int, "memory": Int, "info": {"error": None/String}}
-        """
-        raise NotImplementedError()
-
+        pass
     def check_status_code(self, response, status_code=200):
         """
         检查响应是否是指定的status code 否则引发异常
