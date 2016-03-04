@@ -1,7 +1,8 @@
 # coding=utf-8
+import re
 import html
 import requests
-from .exceptions import RequestFailed, RegexError
+from .exceptions import AuthFailed,RequestFailed, RegexError, SubmitProblemFailed
 
 
 class Robot(object):
@@ -9,39 +10,32 @@ class Robot(object):
         self.cookies = cookies if cookies is not None else {}
 
     def check_url(self, url):
-        """
-        检查一个url是否是本oj的合法的url
-        :param url:
-        :return: True/False
-        """
-        raise NotImplementedError()
+        regex = r"^http://acm.zju.edu.cn/onlinejudge/showProblem.do\?problemCode=\d{4}$"
+        return re.compile(regex).match(url) is not None;
 
     def login(self, username, password):
-        """
-        使用给定的用户名和密码登录系统 然后更新self.cookies
-        :param username:
-        :param password:
-        :return: None
-        """
-        raise NotImplementedError()
+        url = r"http://acm.zju.edu.cn/onlinejudge/login.do"
+        data = {
+                "handle": username,
+                "password": password,
+                "rememberMe": "on"
+        }
+        headers = {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "Referer": "http://acm.zju.edu.cn/onlinejudge/login.do"
+        }
+        r = self.post(url, data, headers);
+        if r.status_code is not 302:
+            raise AuthFailed("Failed to login ZOJ!");
+        self.cookies = dict(r.cookies);
 
     @property
     def is_logged_in(self):
-        """
-        使用当前的cookies 检查是否是登录状态
-        :return: True/False
-        """
-        raise NotImplementedError()
+        r = self.post("http://acm.zju.edu.cn/onlinejudge/editProfile.do", self.cookies)
+        return r.status_code == 200
 
     def get_problem(self, url):
-        """
-        获取url上的题目信息
-        cpu为毫秒 内存单位是M
-        :return: {"id": String(pat-a-1001/hdu-1002), "title": String, "description": String,
-                  "input_description": String, "output_description": String,
-                  "samples": [{"input": String, "output": String}],
-                  "time_limit": Int, "memory_limit": Int}
-        """
+        
         raise NotImplementedError()
 
     def submit(self, url, language, code):
