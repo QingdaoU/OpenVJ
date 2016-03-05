@@ -7,7 +7,6 @@ from .utils import Language, Result
 
 
 class HduojRobot(Robot):
-
     def check_url(self, url):
         regex = r"^http://acm.hdu.edu.cn/showproblem.php\?pid=\d{4}$"
         return re.compile(regex).match(url) is not None
@@ -36,9 +35,6 @@ class HduojRobot(Robot):
         r.encoding = "gb2312"
         return r
 
-    def post(self, url, data, headers=None, cookies=None, allow_redirects=False):
-        return self._request("post", url, data=data, cookies=cookies, headers=headers, allow_redirects=allow_redirects)
-
     def _regex_page(self, url, regex):
         r = self.get(url)
         self.check_status_code(r)
@@ -50,7 +46,7 @@ class HduojRobot(Robot):
             if k == "samples":
                 data[k] = [{"input": items[0], "output": items[1]}]
             else:
-                data[k] = items[0]
+                data[k] = self._clean_html(items[0])
 
         return data
 
@@ -63,31 +59,31 @@ class HduojRobot(Robot):
                  "description": r"Problem Description</div>\s*<div class=panel_content>([\s\S]*?)</div>",
                  "input_description": r"Input</div>\s*<div class=panel_content>([\s\S]*?)</div>",
                  "output_description": r"Output</div>\s*<div class=panel_content>([\s\S]*?)</div>",
-                 "samples": r"Courier New,Courier,monospace;\">([\s\S]*?)</div>"
-                 }
+                 "samples": r'Courier New,Courier,monospace;">([\s\S]*?)</div>'}
         problem_id = re.compile(r"\d{4}").search(url).group()
         data = self._regex_page(url, regex)
         data["problem_id"] = problem_id
         data["submit_url"] = "http://acm.hdu.edu.cn/submit.php?action=submit"
         return data
 
-    def submit(self, submmit_url, language, code, origin_id):
+    def submit(self, submit_url, language, code, origin_id):
+        code = code.encode("gb2312")
         if language == Language.C:
-            compiler_id = "1"
+            language = "1"
         elif language == Language.CPP:
-            compiler_id = "0"
+            language = "0"
         else:
-            compiler_id = "5"
+            language = "5"
 
-        r = self.post(submmit_url, data={"check": "0", "problemid": origin_id,
-                                 "language": compiler_id,
-                                 "usercode": code},
-                           cookies=self.cookies,
-                           headers={"Content-Type": "application/x-www-form-urlencoded",
-                                    "Referer": submmit_url})
+        r = self.post(submit_url, data={"check": "0", "problemid": origin_id,
+                                        "language": language,
+                                        "usercode": code},
+                      cookies=self.cookies,
+                      headers={"Content-Type": "application/x-www-form-urlencoded",
+                               "Referer": submit_url})
 
         if r.status_code != 302:
-            raise SubmitProblemFailed("Faild to submit problem, url: %s, status code %d" % (url, r.status_code))
+            raise SubmitProblemFailed("Faild to submit problem, url: %s, status code %d" % (submit_url, r.status_code))
 
     def get_result(self, submission_id, username):
         status_url = r"http://acm.hdu.edu.cn/status.php?&user=" + username
@@ -103,11 +99,7 @@ class HduojRobot(Robot):
 
         if code == "Accepted":
             result = Result.accepted
-        elif code == "Queuing":
-            result = Result.waiting
-        elif code == "Compiling":
-            result = Result.waiting
-        elif code == "Running":
+        elif code in ["Queuing", "Compiling", "Running"]:
             result = Result.waiting
         elif code == "Presentation Error":
             result = Result.format_error
@@ -120,7 +112,7 @@ class HduojRobot(Robot):
         elif code == "Memory Limit Exceeded":
             result = Result.memory_limit_exceeded
         elif code == "Output Limit Exceeded":
-            pass
+            result = Result.runtime_error
         elif code == "Compilation Error":
             result = Result.compile_error
         elif code == "System Error":
@@ -144,8 +136,7 @@ class HduojRobot(Robot):
             r = self.get(r"http://acm.hdu.edu.cn/viewerror.php?rid=" + submission_id,
                          headers={"Referer": "http://acm.hdu.edu.cn/status.php?first=&pid=&lang=0&status=0&user=" + username})
             self.check_status_code(r)
-            error = self._decode_html(re.compile("<pre>([\s\S]*)</pre>").findall(r.text))
-
+            error = self._clean_html(re.compile("<pre>([\s\S]*)</pre>").findall(r.text))
 
         return {"result": result, "cpu_time": cpu_time, "memory": memory,
                 "info": {"result_text": self._clean_html(data[0][1])}, "error": error}
