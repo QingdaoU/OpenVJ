@@ -10,17 +10,34 @@ class Robot(object):
         self.cookies = cookies if cookies is not None else {}
 
     def check_url(self, url):
+        """
+        检查一个url是否是本oj的合法的url
+        :param url:
+        :return: True/False
+        """
         raise NotImplementedError()
 
     def login(self, username, password):
+        """
+        使用给定的用户名和密码登录系统 然后更新self.cookies
+        :param username:
+        :param password:
+        :return: None
+        """
         raise NotImplementedError()
 
     @property
     def is_logged_in(self):
+        """
+        使用当前的cookies 检查是否是登录状态
+        :return: True/False
+        """
         raise NotImplementedError()
 
     def get_problem(self, url):
         """
+        获取url上的题目信息
+        cpu为毫秒 内存单位是M
         :return: {"id": String(pat-a-1001/hdu-1002), "title": String, "description": String,
                   "input_description": String, "output_description": String,
                   "samples": [{"input": String, "output": String}],
@@ -30,10 +47,12 @@ class Robot(object):
 
     def submit(self, url, language, code):
         """
+        提交题目
+        result和language按照utils中转换一下
         :param url
         :param language:
         :param code:
-        :return: 提交id
+        :return: 提交id 字符串
         """
         raise NotImplementedError()
 
@@ -78,17 +97,27 @@ class Robot(object):
     def _decode_html(self, text):
         """
         html实体编码的解码
+        比如 &gt -> >  &lt -> <
         """
         return html.unescape(text)
 
     def get_result(self, submission_id):
         """
+        获取提交结果
+        result和language按照utils中转换一下
+        返回值中info["error"]只有编译错误的时候才会为字符串,否则为None
         :param submission_id:
-        :return: {"result": Result, "cpu_time": Int, "memory": Int}
+        :return: {"result": Result, "cpu_time": Int, "memory": Int, "info": {"error": None/String}}
         """
         raise NotImplementedError()
 
     def check_status_code(self, response, status_code=200):
+        """
+        检查响应是否是指定的status code 否则引发异常
+        :param response:
+        :param status_code:
+        :return:
+        """
         if response.status_code != status_code:
             raise RequestFailed("Invalid status code [%d] when fetching url [%s], expected %d" %
                                 (response.status_code, response.url, status_code))
