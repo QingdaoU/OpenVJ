@@ -42,7 +42,9 @@ class Robot(object):
                   "input_description": String, "output_description": String,
                   "submit_url: String/URL,
                   "samples": [{"input": String, "output": String}],
-                  "time_limit": Int, "memory_limit": Int}
+                  "spj": True/False,
+                  "time_limit": Int ms, 
+                  "memory_limit": Int M}
         """
         raise NotImplementedError()
 
