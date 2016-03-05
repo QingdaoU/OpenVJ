@@ -47,6 +47,8 @@ class HduojRobot(Robot):
                 data[k] = [{"input": items[0], "output": items[1]}]
             else:
                 data[k] = self._clean_html(items[0])
+        data["memory_limit"] = int(data["memory_limit"]) // 1024
+        data["time_limit"] = int(data["time_limit"])
 
         return data
 
@@ -136,7 +138,7 @@ class HduojRobot(Robot):
             r = self.get(r"http://acm.hdu.edu.cn/viewerror.php?rid=" + submission_id,
                          headers={"Referer": "http://acm.hdu.edu.cn/status.php?first=&pid=&lang=0&status=0&user=" + username})
             self.check_status_code(r)
-            error = self._clean_html(re.compile("<pre>([\s\S]*)</pre>").findall(r.text))
+            error = self._clean_html(str(re.compile("<pre>([\s\S]*)</pre>").findall(r.text)))
 
         return {"result": result, "cpu_time": cpu_time, "memory": memory,
                 "info": {"result_text": self._clean_html(data[0][1])}, "error": error}
