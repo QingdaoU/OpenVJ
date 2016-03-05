@@ -11,22 +11,23 @@ class PATRobot(Robot):
         self.token = ""
 
     def check_url(self, url):
-        regex = r"^http://www.patest.cn/contests/pat-(a|b|t)-practise/1\d{3}$"
+        regex = r"^https://www.patest.cn/contests/pat-(a|b|t)-practise/1\d{3}$"
         return re.compile(regex).match(url) is not None
 
     def _get_token(self):
-        r = self.get("http://www.patest.cn/contests", cookies=self.cookies)
+        r = self.get("https://www.patest.cn/contests", cookies=self.cookies)
+        self.check_status_code(r)
         self.token = re.compile(r"<meta content=\"(.*)\" name=\"csrf-token\" />").findall(r.text)[0]
 
     def login(self, username, password):
-        r = self.post("http://www.patest.cn/users/sign_in",
+        r = self.post("https://www.patest.cn/users/sign_in",
                       data={"utf8": "✓",
                             "user[handle]": username,
                             "user[password]": password,
                             "user[remember_me]": 1,
                             "commit": "登录"},
                       headers={"Content-Type": "application/x-www-form-urlencoded",
-                               "Referer": "http://www.patest.cn/users/sign_in"})
+                               "Referer": "https://www.patest.cn/users/sign_in"})
         # 登陆成功会重定向到首页,否则200返回错误页面
         if r.status_code != 302:
             raise AuthFailed("Failed to login PAT")
@@ -43,20 +44,22 @@ class PATRobot(Robot):
     def get_problem(self, url):
         if not self.check_url(url):
             raise RequestFailed("Invalid PAT url")
-        problem_id = "pat-" + "-".join(re.compile(r"^http://www.patest.cn/contests/pat-(a|b|t)-practise/(\d{4})$").findall(url)[0])
+        problem_id = "pat-" + "-".join(re.compile(r"^https://www.patest.cn/contests/pat-(a|b|t)-practise/(\d{4})$").findall(url)[0])
         regex = {"title": r"<div id=\"body\" class=\"span-22 last\">\s*<h1>(.*)</h1>",
                  "time_limit": r"<div class='key'>\s*时间限制\s*</div>\s*<div class='value'>\s*(\d+) ms",
                  "memory_limit": r"<div class='key'>\s*内存限制\s*</div>\s*<div class='value'>\s*(\d+) kB",
                  "description": r"<div id='problemContent'>([\s\S]*?)<b>\s*(?:Input|Input Specification:|输入格式：)\s*</b",
                  "input_description": r"<b>\s*(?:Input|Input Specification:|输入格式：)\s*</b>([\s\S]*?)<b>\s*(?:Output|Output Specification:|输出格式：)\s*</b>",
                  "output_description": r"<b>\s*(?:Output|Output Specification:|输出格式：)\s*</b>([\s\S]*?)<b>\s*(?:Sample Input|输入样例).*</b>",
-                 "samples": r"<b>\s*(?:Sample Input|输入样例)\s*(?P<t_id>\d?).?</b>\s*<pre>([\s\S]*?)</pre>\s+<b>(?:Sample Output|输出样例)\s?(?P=t_id).?</b>\s*<pre>([\s\S]*?)</pre>"}
+                 "samples": r"<b>\s*(?:Sample Input|输入样例)\s*(?P<t_id>\d?).?</b>\s*<pre>([\s\S]*?)</pre>\s+<b>(?:Sample Output|输出样例)\s?(?P=t_id).?</b>\s*<pre>([\s\S]*?)</pre>",
+                 "submit_url": r"<form accept-charset=\"UTF-8\" action=\"([\s\S]*?)\" method=\"post\">"}
         data = self._regex_page(url, regex)
         data["id"] = problem_id
+        data["submit_url"] = "https://www.patest.cn" + data["submit_url"]
         return data
 
     def _regex_page(self, url, regex):
-        r = self.get(url)
+        r = self.get(url, cookies=self.cookies, headers={"Referer": "https://www/patest.cn"})
         self.check_status_code(r)
         data = {}
         for k, v in regex.items():
@@ -72,26 +75,26 @@ class PATRobot(Robot):
                 data[k] = tmp
         return data
 
-    def submit(self, url, language, code):
+    def submit(self, submit_url, language, code, *args):
         if language == Language.C:
             compiler_id = "3"
         elif language == Language.CPP:
             compiler_id = "2"
         else:
             compiler_id = "10"
-        r = self.post(url, data={"utf8": "✓", "compiler_id": compiler_id, "code": code,
-                                 "authenticity_token": self.token},
+        r = self.post(submit_url, data={"utf8": "✓", "compiler_id": compiler_id, "code": code,
+                                        "authenticity_token": self.token},
                       cookies=self.cookies,
-                      headers={"Referer": "http://www.patest.cn/",
+                      headers={"Referer": "https://www.patest.cn/",
                                "Content-Type": "application/x-www-form-urlencoded"})
         if r.status_code != 302:
-            raise SubmitProblemFailed("Failed to submit problem, url: %s, status code: %d" % (url, r.status_code))
-        return str(re.compile(r"http://www.patest.cn/submissions/(\d+)").findall(r.headers["Location"])[0])
+            raise SubmitProblemFailed("Failed to submit problem, url: %s, status code: %d" % (submit_url, r.status_code))
+        return str(re.compile(r"//www.patest.cn/submissions/(\d+)").findall(r.headers["Location"])[0])
 
-    def get_result(self, submission_id):
-        r = self.get("http://www.patest.cn/submissions/" + submission_id,
+    def get_result(self, submission_id, *args):
+        r = self.get("https://www.patest.cn/submissions/" + submission_id,
                      cookies=self.cookies,
-                     headers={"Referer": "http://www.patest.cn/"})
+                     headers={"Referer": "https://www.patest.cn/"})
         self.check_status_code(r)
         data = re.compile(r"<td>\s*<span class='submitRes-(\d+)'>\s*<a[\s\S]*?>([\s\S]*?)</a>\s*</span>\s*</td>\s*"
                           r"<td>[\s\S]*?</td>\s*"
@@ -100,7 +103,7 @@ class PATRobot(Robot):
                           r"<td>(\d*)</td>\s*"
                           r"<td>(\d*)</td>").findall(r.text)
         code = int(data[0][0])
-        # http://www.patest.cn/help
+        # https://www.patest.cn/help
         # 等待评测 正在评测
         if code in [0, 1]:
             result = Result.waiting
@@ -140,11 +143,12 @@ class PATRobot(Robot):
 
         error = None
         if result == Result.compile_error:
-            r = self.get("http://www.patest.cn/submissions/" + submission_id + "/log",
+            r = self.get("https://www.patest.cn/submissions/" + submission_id + "/log",
                          cookies=self.cookies,
-                         headers={"Referer": "http://www.patest.cn/"})
+                         headers={"Referer": "https://www.patest.cn/"})
             self.check_status_code(r)
             error = self._decode_html(re.compile("<pre>([\s\S]*)</pre>").findall(r.text)[0])
 
         return {"result": result, "cpu_time": cpu_time, "memory": memory,
                 "info": {"result_text": self._clean_html(data[0][1]), "error": error}}
+

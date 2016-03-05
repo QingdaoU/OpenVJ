@@ -40,19 +40,21 @@ class Robot(object):
         cpu为毫秒 内存单位是M
         :return: {"id": String(pat-a-1001/hdu-1002), "title": String, "description": String,
                   "input_description": String, "output_description": String,
+                  "submit_url: String/URL,
                   "samples": [{"input": String, "output": String}],
                   "time_limit": Int, "memory_limit": Int}
         """
         raise NotImplementedError()
 
-    def submit(self, url, language, code):
+    def submit(self, submit_url, language, code, origin_id):
         """
         提交题目
         result和language按照utils中转换一下
-        :param url
+        :param submit_url
         :param language:
         :param code:
-        :return: 提交id 字符串
+        :param origin_id: 题目的原始id
+        :return: 提交 id 字符串 hduoj返回None
         """
         raise NotImplementedError()
 
@@ -101,12 +103,13 @@ class Robot(object):
         """
         return html.unescape(text)
 
-    def get_result(self, submission_id):
+    def get_result(self, submission_id, username):
         """
         获取提交结果
         result和language按照utils中转换一下
         返回值中info["error"]只有编译错误的时候才会为字符串,否则为None
         :param submission_id:
+        :param username: 提交这个题的用户名
         :return: {"result": Result, "cpu_time": Int, "memory": Int, "info": {"error": None/String}}
         """
         raise NotImplementedError()
