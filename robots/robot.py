@@ -1,4 +1,5 @@
 # coding=utf-8
+import re
 import html
 import requests
 from .exceptions import RequestFailed, RegexError
@@ -120,3 +121,10 @@ class Robot(object):
         if response.status_code != status_code:
             raise RequestFailed("Invalid status code [%d] when fetching url [%s], expected %d" %
                                 (response.status_code, response.url, status_code))
+
+    def _clean_html(self, text):
+        # 先去除部分html标记
+        p1 = self._decode_html(re.compile(r"<p.*?>|</p>|<b.*?>|</b>|<span.*?>|</span>|<i.*?>|</i>").sub("", text))
+        # <br>之类的转换为\n
+        p2 = re.compile(r"<br.*>").sub(r"\n", p1)
+        return p2
