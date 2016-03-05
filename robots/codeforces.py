@@ -26,9 +26,10 @@ class CodeForcesRobot(Robot):
                             "password": password, "remember": "on"},
                       cookies=self.cookies)
         if r.status_code != 302:
-            raise AuthFailed("Failed to login PAT")
+            raise AuthFailed("Failed to login CodeForces")
         self.cookies = dict(r.cookies)
 
+    @property
     def is_logged_in(self):
         r = self.get("http://codeforces.com/settings/general", cookies=self.cookies)
         return r.status_code == 200
@@ -46,7 +47,6 @@ class CodeForcesRobot(Robot):
         data = {}
         for k, v in regex.items():
             items = re.compile(v).findall(r.text)
-            print(k, items)
             if not items:
                 raise RegexError("No such data")
             data[k] = self._clean_html(items[0])
