@@ -1,14 +1,13 @@
 # coding=utf-8
 import re
-import urllib
 from .robot import Robot
 from .exceptions import AuthFailed, RequestFailed, RegexError, SubmitProblemFailed
 from .utils import Language, Result
 
 
 class PATRobot(Robot):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, cookies=None):
+        super().__init__(cookies=cookies)
         self.token = ""
 
     def check_url(self, url):
@@ -37,7 +36,6 @@ class PATRobot(Robot):
 
     @property
     def is_logged_in(self):
-        print(self.cookies)
         r = self.get("http://www.patest.cn/users/edit", cookies=self.cookies)
         # 登录状态是200,否则302到登陆页面
         return r.status_code == 200
@@ -56,9 +54,6 @@ class PATRobot(Robot):
         data = self._regex_page(url, regex)
         data["id"] = problem_id
         return data
-
-    def _clean_html(self, text):
-        return self._decode_html(re.compile("<p>|</p>|<b>|</b>|\r|\n|<span>|</span>").sub("", text))
 
     def _regex_page(self, url, regex):
         r = self.get(url)
