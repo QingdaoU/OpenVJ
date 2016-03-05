@@ -5,15 +5,13 @@ from .robot import Robot
 from .exceptions import AuthFailed,RequestFailed, RegexError, SubmitProblemFailed
 from .utils import Language
 
+
 class ZOJRobot(Robot):
 
-    def __init__(self, cookies=None):
-        self.cookies = cookies if cookies is not None else {}
-    # OK
     def check_url(self, url):
         regex = r"^http://acm.zju.edu.cn/onlinejudge/showProblem.do\?problemCode=\d{4}$"
         return re.compile(regex).match(url) is not None
-    #OK
+
     def login(self, username, password):
         url = r"http://acm.zju.edu.cn/onlinejudge/login.do"
         data = {
@@ -26,19 +24,19 @@ class ZOJRobot(Robot):
                     "Referer": "http://acm.zju.edu.cn/onlinejudge/login.do"
         }
         r = self.post(url, data, headers)
-        if r.status_code is not 302:
+
+        if r.status_code != 302:
             raise AuthFailed("Failed to login ZOJ!")
         self.cookies = dict(r.cookies)
 
-    #OK
+    def logout(self):
+        self.cookies = None
+
     @property
     def is_logged_in(self):
         r = self.get("http://acm.zju.edu.cn/onlinejudge/editProfile.do", cookies = self.cookies)
-        if re.compile(r"<td align=\"right\">Confirm Password</td>").match(r.text) is not None:
-            return False
-        return True
+        return r'<td align="right">Confirm Password</td>' in r.text
 
-    #OK
     def get_problem(self, url):
         if not self.check_url(url):
             raise RequestFailed("Invalid ZOJ URL!")
@@ -62,11 +60,11 @@ class ZOJRobot(Robot):
         self.check_status_code(r)
         data = {}
         for k,v in regex.items():
-            items = re.compile(v).findall(r.text);
+            items = re.compile(v).findall(r.text)
             if not items:
                 raise RegexError("NO such data!")
-            if(k != "samples"):
-                data[k] = self._clean_html(items[0]);
+            if k != "samples":
+                data[k] = self._clean_html(items[0])
             else :
                 tmp = []
                 for item in items:
@@ -113,3 +111,4 @@ class ZOJRobot(Robot):
         if response.status_code != status_code:
             raise RequestFailed("Invalid status code [%d] when fetching url [%s], expected %d" %
                                 (response.status_code, response.url, status_code))
+

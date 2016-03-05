@@ -19,14 +19,14 @@ class PATRobot(Robot):
         self.token = re.compile(r"<meta content=\"(.*)\" name=\"csrf-token\" />").findall(r.text)[0]
 
     def login(self, username, password):
-        r = self.post("http://www.patest.cn/users/sign_in",
+        r = self.post("https://www.patest.cn/users/sign_in",
                       data={"utf8": "✓",
                             "user[handle]": username,
                             "user[password]": password,
                             "user[remember_me]": 1,
                             "commit": "登录"},
                       headers={"Content-Type": "application/x-www-form-urlencoded",
-                               "Referer": "http://www.patest.cn/users/sign_in"})
+                               "Referer": "https://www.patest.cn/users/sign_in"})
         # 登陆成功会重定向到首页,否则200返回错误页面
         if r.status_code != 302:
             raise AuthFailed("Failed to login PAT")
