@@ -42,11 +42,19 @@ class HduojRobot(Robot):
         for k, v in regex.items():
             items = re.compile(v).findall(r.text)
             if not items:
-                raise RegexError("No such data")
+                if k == "spj":
+                    data[k] = False
+                elif k == "hint":
+                    data["hint"] = None
+                else:
+                    raise RegexError("No such data")
             if k == "samples":
                 data[k] = [{"input": items[0], "output": items[1]}]
-            else:
-                data[k] = self._clean_html(items[0])
+            elif items:
+                if k == "spj":
+                    data[k] = True
+                else:
+                    data[k] = self._clean_html(items[0])
         data["memory_limit"] = int(data["memory_limit"]) // 1024
         data["time_limit"] = int(data["time_limit"])
 
@@ -61,7 +69,9 @@ class HduojRobot(Robot):
                  "description": r"Problem Description</div>\s*<div class=panel_content>([\s\S]*?)</div>",
                  "input_description": r"Input</div>\s*<div class=panel_content>([\s\S]*?)</div>",
                  "output_description": r"Output</div>\s*<div class=panel_content>([\s\S]*?)</div>",
-                 "samples": r'Courier New,Courier,monospace;">([\s\S]*?)</div>'}
+                 "hint": r"Hint(?:[\s\S]*?Hint[\s\S]*?</i>|</i>\s*</div>)([\s\S]*?)</div>",
+                 "spj": r"<font color=red>Special Judge</font>",
+                 "samples": r'Courier New,Courier,monospace;">([\s\S]*?)(?:<div|</div>)'}
         problem_id = re.compile(r"\d{4}").search(url).group()
         data = self._regex_page(url, regex)
         data["problem_id"] = problem_id

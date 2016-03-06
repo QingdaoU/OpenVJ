@@ -130,7 +130,7 @@ class Robot(object):
 
     def _clean_html(self, text):
         # 先去除部分html标记
-        p1 = self._decode_html(re.compile(r"<p.*?>|</p>|<b.*?>|</b>|<span.*?>|</span>|<i.*?>|</i>").sub("", text))
+        p1 = self._decode_html(re.compile(r"<p.*?>|</p>|<b.*?>|</b>|<span.*?>|</span>").sub("", text))
         # <br>之类的转换为\n
         p2 = re.compile(r"<br.*>").sub(r"\n", p1)
         return p2
