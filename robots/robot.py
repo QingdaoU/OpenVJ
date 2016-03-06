@@ -44,7 +44,8 @@ class Robot(object):
                   "samples": [{"input": String, "output": String}],
                   "spj": True/False,
                   "time_limit": Int ms, 
-                  "memory_limit": Int M}
+                  "memory_limit": Int M,
+                  "hint": String/None}
         """
         raise NotImplementedError()
 

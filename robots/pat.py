@@ -56,7 +56,11 @@ class PATRobot(Robot):
                  "submit_url": r'<form accept-charset="UTF-8" action="([\s\S]*?)" method="post">'}
         data = self._regex_page(url, regex)
         data["id"] = problem_id
+        data["time_limit"] = int(data["time_limit"])
+        data["memory_limit"] = int(data["memory_limit"]) // 1024
         data["submit_url"] = "https://www.patest.cn" + data["submit_url"]
+        # pat上都没有提示
+        data["hint"] = None
         return data
 
     def _regex_page(self, url, regex):
