@@ -99,11 +99,12 @@ class ZOJRobot(Robot):
                 "Floating Point Error": 1,
                 "Output Limit Exceeded": 1,
         }
-        compile_id = re.compile(r'<a href="/onlinejudge/showJudgeComment\.do\?submissionId=\d+">Compilation Error</a>').search(r.text)
-        if compile_id is not None:
+        compile_list = re.compile(r'<a href="/onlinejudge/showJudgeComment\.do\?submissionId=\d+">Compilation Error</a>').findall(r.text)
+        if compile_list.__len__() != 0:
             res["result"] = Result.compile_error
             res["cpu_time"] = 0
             res["memory"] = 0
+            compile_id = compile_list[0]
             res["info"] = self.get(r"http://acm.zju.edu.cn/onlinejudge/showJudgeComment.do?submissionId="+compile_id, headers={r"Referer": r"http://acm.zju.edu.cn/"}, cookies=self.cookies).text
         elif r"No submission available." in r.text:
             res["result"] = Result.waiting

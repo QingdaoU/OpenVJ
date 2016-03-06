@@ -7,6 +7,7 @@ class ZOJRobotTest(unittest.TestCase):
 
     def setUp(self):
         self.tclass = ZOJRobot()
+        self.tclass.login("ltwy", "jiangxuelei")
 
     def tearDown(self):
         pass
@@ -21,20 +22,15 @@ class ZOJRobotTest(unittest.TestCase):
         self.assertEquals(self.tclass.login("ltwy", "jiangxuelei"), None)
 
     def test_is_logged_in(self):
-        self.tclass.login("ltwy", "jiangxuelei")
         self.assertEquals(self.tclass.is_logged_in, True)
-        self.tclass.logout()
-        self.assertEquals(self.tclass.is_logged_in, False)
+
 
     def test_get_problem(self):
-        self.tclass.login("ltwy", "jiangxuelei")
-        self.assertEquals(self.tclass.get_problem(r"http://acm.zju.edu.cn/onlinejudge/showProblem.do?problemCode=3807"), None)
+        self.tclass.get_problem(r"http://acm.zju.edu.cn/onlinejudge/showProblem.do?problemCode=3807")
 
     def test_submit(self):
-        self.tclass.login("ltwy", "jiangxuelei")
         print(self.tclass.submit(r"http://acm.zju.edu.cn/onlinejudge/submit.do?problemId=1", Language.CPP, r'#include<stdio.h> int main(){ int a,b; scanf("%d %d",&a,&b); printf("%d\n",a+b);return 0;}', int("1001") - 1000))
 
     def test_get_result(self):
-        self.tclass.login("ltwy", "jiangxuelei")
         self.tclass.get_result("4162525", "ltwy")
 
