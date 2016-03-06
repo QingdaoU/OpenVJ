@@ -8,3 +8,5 @@ DB_DB = "openvj"
 
 INSTALLED_ROBOTS = {"pat": {"robot": "robots.pat.PATRobot"},
                     "hduoj": {"robot": "robots.hduoj.HduojRobot"}}
+
+LOG_LEVEL = "DEBUG"
