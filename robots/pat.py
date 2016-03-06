@@ -156,3 +156,4 @@ class PATRobot(Robot):
 
         return {"result": result, "cpu_time": cpu_time, "memory": memory,
                 "info": {"result_text": self._clean_html(data[0][1]), "error": error}}
+
