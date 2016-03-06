@@ -3,7 +3,7 @@ import re
 import html
 from .robot import Robot
 from .exceptions import AuthFailed,RequestFailed, RegexError, SubmitProblemFailed
-from .utils import Language
+from .utils import Language, Result
 
 
 class ZOJRobot(Robot):
@@ -69,7 +69,7 @@ class ZOJRobot(Robot):
                 data[k] = {"items[0][0]": items[0][1]}
         return data
 
-    def submit(self, submit_url, language, code, orginal_id):
+    def submit(self, submit_url, language, code, orgina_id):
         if(self.is_logged_in() == False):
             raise AuthFailed("Not login!")
         if language == Language.C:
@@ -78,7 +78,7 @@ class ZOJRobot(Robot):
             compiler_id = "2"
         else:
             compiler_id = "4"
-        r = self.post(submit_url, data={"problemId": orginal_id, "languageId": compiler_id, "source": code},
+        r = self.post(submit_url, data={"problemId": orgina_id, "languageId": compiler_id, "source": code},
                       cookies=self.cookies,
                       headers={"Referer": "http://acm.zju.edu.cn/",
                                "Content-Type": "application/x-www-form-urlencoded"})
@@ -86,5 +86,25 @@ class ZOJRobot(Robot):
             raise SubmitProblemFailed("Failed to submit problem, url: %s, status code: %d" % (submit_url, r.status_code))
         return str(re.compile(r"<p>Your source has been submitted. The submission id is <font color='red'>(\d+)</font>").findall(r.text)[0])
 
-    def get_result(self, submission_id):
-        pass
+    def get_result(self, submission_id, username):
+        if(self.is_logged_in == False):
+            raise AuthFailed("Not login!")
+        url = r"http://acm.zju.edu.cn/onlinejudge/showRuns.do?contestId=1&search=true&firstId=-1&lastId=-1&problemCode=&handle=&idStart="+submission_id+r"&idEnd="+submission_id
+        r = self.get(url, headers={r"Referer": r"http://acm.zju.edu.cn/"},cookies=self.cookies);
+        res = {}
+        if re.compile(r'<a href="/onlinejudge/showJudgeComment.do?submissionId=\d+>"Compilation Error"</a>').match(r.text):
+            res["result"] = Result.compile_error
+            res["cpu_time"] = 0
+            res["memory"] = 0
+            compile_id = re.compile(r'<a href="/onlinejudge/showJudgeComment.do?submissionId=(\d+)>"Compilation Error"</a>').findall(r.text)[0]
+            res["info"] = self.get(r"http://acm.zju.edu.cn/onlinejudge/showJudgeComment.do?submissionId="+compile_id)
+        else:
+            regex = {
+                "result": r'<span class="judgeReplyOther">\s*([\s\S]*?)\s*</span></td>',
+                "cpu_time": r'<td class="runTime">(\d+)</td>',
+                "memory": r'<td class="runMemory">(\d+)</td>',
+            }
+            for k, v in regex:
+                res[k] = re.compile(v).findall(r.text)[0]
+            res["info"] = None
+        return res;
