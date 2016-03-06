@@ -6,9 +6,12 @@ from .utils import Language, Result
 
 
 class PATRobot(Robot):
-    def __init__(self, cookies=None):
+    def __init__(self, cookies=None, token=""):
         super().__init__(cookies=cookies)
-        self.token = ""
+        self.token = token
+
+    def save(self):
+        return {"cookies": self.cookies, "token": self.token}
 
     def check_url(self, url):
         regex = r"^https://www.patest.cn/contests/pat-(a|b|t)-practise/1\d{3}$"
@@ -56,7 +59,13 @@ class PATRobot(Robot):
                  "submit_url": r'<form accept-charset="UTF-8" action="([\s\S]*?)" method="post">'}
         data = self._regex_page(url, regex)
         data["id"] = problem_id
+        data["time_limit"] = int(data["time_limit"])
+        data["memory_limit"] = int(data["memory_limit"]) // 1024
         data["submit_url"] = "https://www.patest.cn" + data["submit_url"]
+        # pat上都没有提示
+        data["hint"] = None
+        # pat没有spj
+        data["spj"] = False
         return data
 
     def _regex_page(self, url, regex):
