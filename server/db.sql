@@ -15,15 +15,26 @@ CREATE TABLE IF NOT EXISTS robot_user(
   username VARCHAR(50) NOT NULL,
   password VARCHAR(50) NOT NULL,
   status SMALLINT NOT NULL,
+  last_login_time DATETIME NOT NULL,
   FOREIGN KEY (oj_id) REFERENCES oj(id),
   UNIQUE KEY oj_username (oj_id, username)
 );
 
 
+CREATE TABLE IF NOT EXISTS robot_status(
+  name VARCHAR(40) NOT NULL,
+  status SMALLINT NOT NULL,
+  info TEXT NOT NULL,
+  oj_id VARCHAR(40) NOT NULL,
+  robot_user_id VARCHAR(40) NOT NULL,
+  FOREIGN KEY (oj_id) REFERENCES oj(id),
+  FOREIGN KEY (robot_user_id) REFERENCES robot_user(id)
+);
+
+
 CREATE TABLE IF NOT EXISTS apikey (
-  id VARCHAR(40) PRIMARY KEY,
+  apikey VARCHAR(40) PRIMARY KEY,
   name VARCHAR(50) NOT NULL ,
-  apikey VARCHAR(40) UNIQUE NOT NULL ,
   create_time DATETIME DEFAULT NOW() NOT NULL,
   is_valid SMALLINT DEFAULT 1 NOT NULL
 );

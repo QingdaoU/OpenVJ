@@ -1,6 +1,8 @@
 # coding=utf-8
 import json
-from bottle import route, run, response, request, Bottle, install
+from bottle import route, get, post, run, response, request, Bottle, install
+from openvj.settings import INSTALLED_ROBOTS
+
 from .db import DBHandler, ObjectDoesNotExist
 
 app = Bottle()
@@ -22,7 +24,7 @@ def apikey_auth_plugin(callback):
             return error("Invalid VJ_API_KEY")
         with DBHandler() as db:
             try:
-                db.get("SELECT id FROM apikey WHERE apikey = %s", (api_key, ))
+                db.get("SELECT apikey FROM apikey WHERE apikey = %s and is_valid = 1", (api_key, ))
             except ObjectDoesNotExist:
                 return error("VJ_API_KEY does not exist")
         return callback(*args, **kwargs)
@@ -37,16 +39,41 @@ def success(data):
     return json.dumps({"code": 0, "data": data})
 
 
+def parameter_error(message="参数错误"):
+    return error(message)
+
+
 @route("/")
 def index():
-    return success(request.headers["VJ_API_KEY"])
-    '''
+    return success("It works")
+
+
+def import_class(cl):
+    d = cl.rfind(".")
+    classname = cl[d+1:len(cl)]
+    m = __import__(cl[0:d], globals(), locals(), [classname])
+    return getattr(m, classname)
+
+
+@get("/problem/")
+def get_problem():
+    oj = request.GET.get("oj")
+    url = request.GET.get("url")
+    if not (oj and url):
+        return parameter_error()
+    if oj not in INSTALLED_ROBOTS:
+        return error("oj不存在")
+    Robot = import_class(INSTALLED_ROBOTS[oj]["robot"])
     with DBHandler() as db:
-        r = db.filter("select * from apikey where name = %s", ("test", ))
-        for item in r:
-            item["create_time"] = item["create_time"].strftime("%Y-%-m-%-d %X")
-        return "123"
-    '''
+        robot_info = db.first("select robot_status.info "
+                               "from robot_status, oj "
+                               "where oj.name = %s and robot_status.oj_id = oj.id", (oj, ))
+        robot = Robot(**json.loads(robot_info["info"]))
+
+        problem = robot.get_problem("https://www.patest.cn/contests/pat-t-practise/1001")
+
+    return success(problem)
+
 
 install(content_type_plugin)
 install(apikey_auth_plugin)

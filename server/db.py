@@ -29,10 +29,17 @@ class DBHandler(object):
     def get(self, sql, args):
         r = self.filter(sql, args)
         if not r:
-            raise ObjectDoesNotExist
+            raise ObjectDoesNotExist()
         if len(r) > 1:
-            raise MultiObjectReturned
+            raise MultiObjectReturned()
         return r
+
+    def first(self, sql, args):
+        r = self.filter(sql, args)
+        if not r:
+            raise ObjectDoesNotExist()
+        else:
+            return r[0]
 
     def _close(self):
         self.connection.close()
