@@ -44,12 +44,13 @@ class ZOJRobot(Robot):
         problem_id = re.compile(regex).findall(url)[0]
         regex = {
                 "title": r"<center><span\s*class=\"bigProblemTitle\">(.*)</span></center>",
-                "time_Limit": r"<font\s*color=\"green\">Time\s*Limit:\s*</font>\s*(\d+)\s*Seconds",
+                "time_Limit": r"<font\s*color=\"green\">Time\s*Limit:\s*</font>\s*(\d+)\s*(?:Seconds|Second)",
                 "memory_limit": r"<font\s*color=\"green\">Memory\s*Limit:\s*</font>\s*(\d+)\s*KB",
-                "description": r"</center>\s*<hr>\s*([\s\S]*?)\s*(?:<b>|<h4>)Input",
+                "description": r"</center>\s*<hr>[\s\S]*?<p>\s*([\s\S]*?)\s*(?:<b>|<h4>)Input",
                 "input_description": r"(?:<h4>|<b>|<strong>)Input(?:</h4>|</b>|</strong>)\s*([\s\S]*?)\s*(?:<h4>|<b>|<strong>)Output(?:</h4>|</b>|</strong>)",
                 "output_description": r"(?:<h4>|<b>|<strong>)Output(?:</h4>|</b>|</strong>)\s*([\s\S]*?)\s*(?:<h4>|<b>|<strong>)Sample Input",
-                "samples": r"(?:<h4>|<b>|<strong>)Sample Input(?:</h4>|</b>|</strong>)\s*<pre>([\s\S]*?)</pre>\s*(?:<h4>|<strong>|<b>)Sample Output(?:</b>|</strong>|</h4>)\s*<pre>([\s\S]*?)</pre>"
+                "samples": r"(?:<h4>|<b>|<strong>)Sample\sInput(?:</h4>|</b>|</strong>)\s*<pre>\s*([\s\S]*?)</pre>\s*(?:<h4>|<strong>|<b>)Sample Output(?:</b>|</strong>|</h4>)\s*<pre>([\s\S]*?)</pre>",
+                "hint": r'(?:<h4>|<b>|<strong>)Hint(?:</h4>|</b>|</strong>)\s*<p>[\s\S]*<hr>'
         }
         data = self._regex_page(url, regex)
         data["id"]= problem_id
@@ -61,16 +62,15 @@ class ZOJRobot(Robot):
         for k,v in regex.items():
             items = re.compile(v).findall(r.text)
             if not items:
-                print(k)
                 raise RegexError("NO such data!")
             if k != "samples":
                 data[k] = self._clean_html(items[0])
             else :
-                data[k] = {"items[0][0]": items[0][1]}
+                data[k] = {items[0][0]: items[0][1]}
         return data
 
-    def submit(self, submit_url, language, code, orgina_id):
-        if(self.is_logged_in() == False):
+    def submit(self, submit_url, language, code, origin_id):
+        if(self.is_logged_in == False):
             raise AuthFailed("Not login!")
         if language == Language.C:
             compiler_id = "1"
@@ -78,7 +78,7 @@ class ZOJRobot(Robot):
             compiler_id = "2"
         else:
             compiler_id = "4"
-        r = self.post(submit_url, data={"problemId": orgina_id, "languageId": compiler_id, "source": code},
+        r = self.post(submit_url, data={"problemId": str(int(origin_id)-1000), "languageId": compiler_id, "source": code},
                       cookies=self.cookies,
                       headers={"Referer": "http://acm.zju.edu.cn/",
                                "Content-Type": "application/x-www-form-urlencoded"})
@@ -90,21 +90,40 @@ class ZOJRobot(Robot):
         if(self.is_logged_in == False):
             raise AuthFailed("Not login!")
         url = r"http://acm.zju.edu.cn/onlinejudge/showRuns.do?contestId=1&search=true&firstId=-1&lastId=-1&problemCode=&handle=&idStart="+submission_id+r"&idEnd="+submission_id
-        r = self.get(url, headers={r"Referer": r"http://acm.zju.edu.cn/"},cookies=self.cookies);
+        r = self.get(url, headers={r"Referer": r"http://acm.zju.edu.cn/"}, cookies=self.cookies)
         res = {}
-        if re.compile(r'<a href="/onlinejudge/showJudgeComment.do?submissionId=\d+>"Compilation Error"</a>').match(r.text):
+        val = {
+                "Accepted": 0,
+                "Time Limit Exceeded": 2,
+                "Memory Limit Exceeded": 3,
+                "Compilation Error": 4,
+                "Presentation Error": 5,
+                "Wrong Answer": 6,
+                "Segmentation Fault": 1,
+                "Non-zero Exit Code": 1,
+                "Floating Point Error": 1,
+                "Output Limit Exceeded": 1,
+        }
+        compile_id = re.compile(r'<a href="/onlinejudge/showJudgeComment\.do\?submissionId=\d+">Compilation Error</a>').search(r.text)
+        if compile_id is not None:
             res["result"] = Result.compile_error
             res["cpu_time"] = 0
             res["memory"] = 0
-            compile_id = re.compile(r'<a href="/onlinejudge/showJudgeComment.do?submissionId=(\d+)>"Compilation Error"</a>').findall(r.text)[0]
-            res["info"] = self.get(r"http://acm.zju.edu.cn/onlinejudge/showJudgeComment.do?submissionId="+compile_id)
+            res["info"] = self.get(r"http://acm.zju.edu.cn/onlinejudge/showJudgeComment.do?submissionId="+compile_id, headers={r"Referer": r"http://acm.zju.edu.cn/"}, cookies=self.cookies).text
+        elif r"No submission available." in r.text:
+            res["result"] = Result.waiting
+            res["cpu_time"] = 0
+            res["memory"] = 0
+            res["info"] = None
         else:
             regex = {
-                "result": r'<span class="judgeReplyOther">\s*([\s\S]*?)\s*</span></td>',
+                "result": r'<span class="judgeReply(?:AC|Other)">\s*([\s\S]*?)\s*</span></td>',
                 "cpu_time": r'<td class="runTime">(\d+)</td>',
                 "memory": r'<td class="runMemory">(\d+)</td>',
             }
-            for k, v in regex:
-                res[k] = re.compile(v).findall(r.text)[0]
+            result_str = re.compile(regex["result"]).findall(r.text)[0]
+            res["result"] = val[result_str]
+            res["cpu_time"] = re.compile(regex["cpu_time"]).findall(r.text)[0]
+            res["memory"] = re.compile(regex["memory"]).findall(r.text)[0]
             res["info"] = None
         return res;
