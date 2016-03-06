@@ -3,7 +3,7 @@ import pymysql
 from openvj.settings import DB_HOST, DB_USER, DB_PASSWORD, DB_DB
 
 
-class ObjectDoesNotExist:
+class ObjectDoesNotExist(Exception):
     pass
 
 

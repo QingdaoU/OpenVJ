@@ -1,7 +1,7 @@
 # coding=utf-8
 import json
 from bottle import route, run, response, request, Bottle, install
-from .db import DBHandler
+from .db import DBHandler, ObjectDoesNotExist
 
 app = Bottle()
 app.config["autojson"] = True
@@ -20,6 +20,11 @@ def apikey_auth_plugin(callback):
         api_key = request.headers.get("VJ_API_KEY")
         if not api_key:
             return error("Invalid VJ_API_KEY")
+        with DBHandler() as db:
+            try:
+                db.get("SELECT id FROM apikey WHERE apikey = %s", (api_key, ))
+            except ObjectDoesNotExist:
+                return error("VJ_API_KEY does not exist")
         return callback(*args, **kwargs)
     return wrapper
 
