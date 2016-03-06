@@ -51,6 +51,8 @@ class ZOJRobot(Robot):
         }
         data = self._regex_page(url, regex)
         data["id"] = re.compile(r"^http://acm.zju.edu.cn/onlinejudge/showProblem.do\?problemCode=(\d{4})$").findall(url)[0]
+        data["memory_limit"] = int(data["memory_limit"]) // 1024
+        data["time_limit"] = int(data["time_limit"])
         return data
 
     def _regex_page(self, url, regex):
@@ -84,33 +86,19 @@ class ZOJRobot(Robot):
         return re.compile(r"<p>Your source has been submitted. The submission id is <font color='red'>(\d+)</font>").findall(r.text)[0]
 
     def get_result(self, submission_id, username):
-        url = r"http://acm.zju.edu.cn/onlinejudge/showRuns.do?contestId=1&search=true&firstId=-1&lastId=-1&problemCode=&handle=&idStart=" + submission_id+r"&idEnd="+submission_id
+        url = r"http://acm.zju.edu.cn/onlinejudge/showRuns.do?contestId=1&search=true&firstId=-1&lastId=-1&problemCode=&handle=&idStart=" + \
+              submission_id + r"&idEnd=" + submission_id
         r = self.get(url, headers={r"Referer": r"http://acm.zju.edu.cn/"}, cookies=self.cookies)
-        res = {}
-        val = {
-                "Accepted": 0,
-                "Time Limit Exceeded": 2,
-                "Memory Limit Exceeded": 3,
-                "Compilation Error": 4,
-                "Presentation Error": 5,
-                "Wrong Answer": 6,
-                "Segmentation Fault": 1,
-                "Non-zero Exit Code": 1,
-                "Floating Point Error": 1,
-                "Output Limit Exceeded": 1,
-        }
-        compile_list = re.compile(r'<a href="/onlinejudge/showJudgeComment\.do\?submissionId=\d+">Compilation Error</a>').findall(r.text)
-        if compile_list.__len__() != 0:
+        res = {"info": {"error": None}, "cpu_time": None, "memory": None}
+
+        compile_list = re.compile(r'<a href="/onlinejudge/showJudgeComment\.do\?submissionId=(\d+)">Compilation Error</a>').findall(r.text)
+        if compile_list:
             res["result"] = Result.compile_error
-            res["cpu_time"] = 0
-            res["memory"] = 0
             compile_id = compile_list[0]
-            res["info"] = self.get(r"http://acm.zju.edu.cn/onlinejudge/showJudgeComment.do?submissionId="+compile_id, headers={r"Referer": r"http://acm.zju.edu.cn/"}, cookies=self.cookies).text
+            res["info"]["error"] = self.get(r"http://acm.zju.edu.cn/onlinejudge/showJudgeComment.do?submissionId=" + compile_id,
+                                   headers={r"Referer": r"http://acm.zju.edu.cn/"}, cookies=self.cookies).text
         elif r"No submission available." in r.text:
             res["result"] = Result.waiting
-            res["cpu_time"] = 0
-            res["memory"] = 0
-            res["info"] = None
         else:
             regex = {
                 "result": r'<span class="judgeReply(?:AC|Other)">\s*([\s\S]*?)\s*</span></td>',
@@ -118,8 +106,21 @@ class ZOJRobot(Robot):
                 "memory": r'<td class="runMemory">(\d+)</td>',
             }
             result_str = re.compile(regex["result"]).findall(r.text)[0]
-            res["result"] = val[result_str]
-            res["cpu_time"] = re.compile(regex["cpu_time"]).findall(r.text)[0]
-            res["memory"] = re.compile(regex["memory"]).findall(r.text)[0]
-            res["info"] = None
+
+            result_mapping = {
+                "Accepted": Result.accepted,
+                "Time Limit Exceeded": Result.time_limit_exceeded,
+                "Memory Limit Exceeded": Result.memory_limit_exceeded,
+                "Compilation Error": Result.compile_error,
+                "Presentation Error": Result.format_error,
+                "Wrong Answer": Result.wrong_answer,
+                "Segmentation Fault": Result.runtime_error,
+                "Non-zero Exit Code": Result.runtime_error,
+                "Floating Point Error": Result.runtime_error,
+                "Output Limit Exceeded": Result.runtime_error,
+            }
+
+            res["result"] = result_mapping[result_str]
+            res["cpu_time"] = int(re.compile(regex["cpu_time"]).findall(r.text)[0])
+            res["memory"] = int(re.compile(regex["memory"]).findall(r.text)[0])
         return res
