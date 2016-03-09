@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from celery import states
 
 
-from .serializers import ProblemSerializer
+from .serializers import ProblemSerializer, CreateSubmissionSerializer
 from .models import OJ, Problem, RobotUser, RobotStatusInfo, ProblemStatus
 from .tasks import get_problem
 
@@ -16,7 +16,7 @@ def error_response(error_reason):
 
 
 def serializer_invalid_response(serializer):
-    for k, v in serializer.errors.iteritems():
+    for k, v in serializer.errors.items():
         return error_response(k + " : " + v[0])
 
 
@@ -48,6 +48,7 @@ class ProblemAPIView(APIView):
                 # 如果任务状态是成功,就更新数据库,并返回结果
                 if task.state == states.SUCCESS:
                     result = task.get()
+                    problem.origin_id = result["id"]
                     problem.title = result["title"]
                     problem.submit_url = result["submit_url"]
                     problem.description = result["description"]
@@ -88,3 +89,11 @@ class ProblemAPIView(APIView):
         Problem.objects.create(oj=oj, url=url, status=ProblemStatus.crawling, task_id=task_id)
         return success_response({"status": ProblemStatus.crawling})
 
+
+class SubmissionAPIView(APIView):
+    def post(self, request):
+        serializer = CreateSubmissionSerializer(data=request.data)
+        if serializer.is_valid():
+            return success_response(serializer.data)
+        else:
+            return serializer_invalid_response(serializer)

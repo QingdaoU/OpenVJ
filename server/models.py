@@ -2,6 +2,7 @@
 from __future__ import unicode_literals
 
 from django.db import models
+from robots.utils import Language, Result
 
 
 class OJ(models.Model):
@@ -71,6 +72,7 @@ class ProblemStatus(models.Model):
 class Problem(models.Model):
     oj = models.ForeignKey(OJ)
     url = models.URLField()
+    origin_id = models.CharField(max_length=30, blank=True, null=True)
     submit_url = models.URLField(blank=True, null=True)
     title = models.CharField(max_length=100, blank=True, null=True)
     description = models.TextField(blank=True, null=True)
@@ -99,13 +101,34 @@ class Problem(models.Model):
             return self.oj.name + " - " + self.title
 
 
+class SubmissionStatus(object):
+    done = 1
+    crawling = 2
+    failed = 3
+
+
 class Submission(models.Model):
+    api_key = models.ForeignKey(APIKey)
     problem = models.ForeignKey(Problem)
-    result = models.IntegerField()
+    robot_user = models.ForeignKey(RobotUser)
+    language = models.IntegerField(choices=((Language.C, "C", ), (Language.CPP, "CPP"), (Language.Java, "Java")))
+    result = models.IntegerField(choices=((Result.accepted, "accepted"),
+                                          (Result.wrong_answer, "wrong_answer"),
+                                          (Result.compile_error, "compiler_error"),
+                                          (Result.format_error, "format_error"),
+                                          (Result.memory_limit_exceeded, "memory_limit_exceeded"),
+                                          (Result.time_limit_exceeded, "time_limit_exceeded"),
+                                          (Result.runtime_error, "runtime_error"),
+                                          (Result.system_error, "system_error"),
+                                          (Result.waiting, "waiting")))
     cpu_time = models.IntegerField()
     memory = models.IntegerField()
     info = models.TextField()
-    robot_user = models.ForeignKey(RobotUser)
+    create_time = models.DateTimeField(auto_now_add=True)
+    status = models.IntegerField(choices=((SubmissionStatus.done, "done"),
+                                          (SubmissionStatus, "crawling"),
+                                          (SubmissionStatus.failed, "failed")))
 
     class Meta:
         db_table = "submission"
+
