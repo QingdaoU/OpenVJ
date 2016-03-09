@@ -59,7 +59,7 @@ class RobotStatusInfo(models.Model):
         db_table = "robot_status_info"
 
     def __str__(self):
-        return self.robot_user.username + self.status_info
+        return self.robot_user.username
 
 
 class ProblemStatus(models.Model):
@@ -86,6 +86,8 @@ class Problem(models.Model):
                                           (ProblemStatus.crawling, "Crawling"),
                                           (ProblemStatus.failed, "Failed")))
     task_id = models.CharField(max_length=40)
+    create_time = models.DateTimeField(auto_now_add=True)
+    last_update_time = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = "problem"

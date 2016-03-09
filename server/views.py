@@ -39,10 +39,13 @@ class ProblemAPIView(APIView):
             return error_response("参数错误")
         try:
             problem = Problem.objects.get(url=url, is_valid=True)
+            # 如果已经爬取完成,就直接返回数据库中的结果
             if problem.status == ProblemStatus.done:
                 return success_response(ProblemSerializer(problem).data)
+            # 如果还是正在爬取的状态,说明已经提交过任务的了,需要获取一下任务状态
             elif problem.status == ProblemStatus.crawling:
                 task = get_problem.AsyncResult(problem.task_id)
+                # 如果任务状态是成功,就更新数据库,并返回结果
                 if task.state == states.SUCCESS:
                     result = task.get()
                     problem.title = result["title"]
@@ -56,24 +59,31 @@ class ProblemAPIView(APIView):
                     problem.status = ProblemStatus.done
                     problem.save()
                     return success_response(ProblemSerializer(problem).data)
+                # 如果任务状态是失败,返回失败结果
                 elif task.state == states.FAILURE:
                     problem.status = ProblemStatus.failed
                     problem.save()
                     return success_response({"status": ProblemStatus.failed})
+                else:
+                    return success_response({"status": ProblemStatus.crawling})
             elif problem.status == ProblemStatus.failed:
                 return success_response({"status": ProblemStatus.failed})
         except Problem.DoesNotExist:
             pass
+        # 题目不存在,需要创建任务
         try:
             oj = OJ.objects.get(name=oj, is_valid=True)
         except OJ.DoesNotExist:
             return error_response("不存在该oj")
+        # 找到爬虫的登录信息
         robot_status = RobotStatusInfo.objects.filter(robot_user__oj=oj).first()
         if not robot_status:
             return error_response("登录信息错误")
+        # 使用登录信息实例化一个爬虫
         robot = import_class(oj.robot)(**json.loads(robot_status.status_info))
         if not robot.check_url(url):
             return error_response("url格式错误")
+        # 创建任务并插入空白题目task_id
         task_id = get_problem.delay(robot, url).id
         Problem.objects.create(oj=oj, url=url, status=ProblemStatus.crawling, task_id=task_id)
         return success_response({"status": ProblemStatus.crawling})
