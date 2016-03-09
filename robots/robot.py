@@ -9,6 +9,9 @@ class Robot(object):
     def __init__(self, cookies=None):
         self.cookies = cookies if cookies is not None else {}
 
+    def save(self):
+        raise NotImplementedError()
+
     def check_url(self, url):
         """
         检查一个url是否是本oj的合法的url
