@@ -19,3 +19,18 @@ DATABASES = {
         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     }
 }
+
+
+REDIS = {
+    "HOST": "127.0.0.1",
+    "PORT": 6379,
+    "PASSWORD": "123456"
+}
+
+
+# celery配置
+BROKER_URL = "redis://{host}:{port}/{db}".format(host=REDIS["HOST"], port=REDIS["PORT"], db=0)
+CELERY_RESULT_BACKEND = "redis"
+CELERY_REDIS_HOST = REDIS["HOST"]
+CELERY_REDIS_PORT = REDIS["PORT"]
+CELERY_REDIS_DB = 0

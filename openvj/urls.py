@@ -16,6 +16,9 @@ Including another URLconf
 from django.conf.urls import url
 from django.contrib import admin
 
+from server.views import ProblemAPIView
+
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
+    url(r'^problem/$', ProblemAPIView.as_view()),
 ]
