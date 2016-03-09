@@ -95,7 +95,7 @@ class HduojRobot(Robot):
                                "Referer": submit_url})
 
         if r.status_code != 302:
-            raise SubmitProblemFailed("Faild to submit problem, url: %s, status code %d" % (submit_url, r.status_code))
+            raise SubmitProblemFailed("Failed to submit problem, url: %s, status code %d" % (submit_url, r.status_code))
 
     def get_result(self, submission_id, username):
         status_url = r"http://acm.hdu.edu.cn/status.php?&user=" + username
@@ -151,5 +151,5 @@ class HduojRobot(Robot):
             error = self._clean_html(str(re.compile("<pre>([\s\S]*)</pre>").findall(r.text)))
 
         return {"result": result, "cpu_time": cpu_time, "memory": memory,
-                "info": {"result_text": self._clean_html(data[0][1])}, "error": error}
+                "info": {"result_text": self._clean_html(data[0][1]), "error": error}}
 
