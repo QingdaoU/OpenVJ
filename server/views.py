@@ -1,34 +1,16 @@
 # coding=utf-8
 import json
+import random
 
 from rest_framework.views import APIView
-from rest_framework.response import Response
 from celery import states
 
-
+from robots.utils import Result
 from .serializers import ProblemSerializer, CreateSubmissionSerializer
-from .models import OJ, Problem, RobotUser, RobotStatusInfo, ProblemStatus
-from .tasks import get_problem
-
-
-def error_response(error_reason):
-    return Response(data={"code": 1, "data": error_reason})
-
-
-def serializer_invalid_response(serializer):
-    for k, v in serializer.errors.items():
-        return error_response(k + " : " + v[0])
-
-
-def success_response(data):
-    return Response(data={"code": 0, "data": data})
-
-
-def import_class(cl):
-    d = cl.rfind(".")
-    class_name = cl[d+1:len(cl)]
-    m = __import__(cl[0:d], globals(), locals(), [class_name])
-    return getattr(m, class_name)
+from .models import (OJ, Problem, RobotUser, RobotStatusInfo, ProblemStatus,
+                     Submission, APIKey, SubmissionStatus, RobotUserStatus, SubmissionWaitingQueue)
+from .tasks import get_problem, submit_dispatcher
+from .utils import success_response, error_response, serializer_invalid_response, import_class
 
 
 class ProblemAPIView(APIView):
@@ -75,7 +57,7 @@ class ProblemAPIView(APIView):
         try:
             oj = OJ.objects.get(name=oj, is_valid=True)
         except OJ.DoesNotExist:
-            return error_response("不存在该oj")
+            return error_response("oj不存在")
         # 找到爬虫的登录信息
         robot_status = RobotStatusInfo.objects.filter(robot_user__oj=oj).first()
         if not robot_status:
@@ -94,6 +76,44 @@ class SubmissionAPIView(APIView):
     def post(self, request):
         serializer = CreateSubmissionSerializer(data=request.data)
         if serializer.is_valid():
-            return success_response(serializer.data)
+            data = serializer.data
+            try:
+                problem = Problem.objects.get(id=data["problem_id"], is_valid=True)
+            except Problem.DoesNotExist:
+                return error_response("题目不存在")
+
+            oj = problem.oj
+            if not oj.is_valid:
+                return error_response("oj不存在")
+
+            submission = Submission.objects.create(api_key=APIKey.objects.all()[0],  # fixme
+                                                   code=data["code"],
+                                                   problem=problem,
+                                                   language=data["language"],
+                                                   result=Result.waiting,
+                                                   status=SubmissionStatus.crawling)
+
+            available_robot_users = RobotUser.objects.filter(oj=oj, is_valid=True, status=RobotUserStatus.free)
+            if not available_robot_users.exists():
+                SubmissionWaitingQueue.objects.create(submission=submission)
+            else:
+                # 占用用户
+                robot_user = available_robot_users[random.randint(0, available_robot_users.count() - 1)]
+                robot_user.status = RobotUserStatus.occupied
+                robot_user.save()
+
+                # 根据用户查询登录信息并实例化相关的类
+                robot_status = RobotStatusInfo.objects.get(robot_user=robot_user)
+                robot = import_class(problem.oj.robot)(**json.loads(robot_status.status_info))
+
+                task_id = submit_dispatcher.delay(problem, submission, robot_user, robot).id
+                submission.task_id = task_id
+                submission.save(update_fields=["task_id"])
+            return success_response({"submission_id": submission.id})
         else:
             return serializer_invalid_response(serializer)
+
+
+'''
+{"problem_id": "d02cbf0f1bba9a6df795efaedcaace31", "language": 1, "code": "xxxxxx"}
+'''

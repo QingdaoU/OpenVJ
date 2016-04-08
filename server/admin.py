@@ -1,6 +1,6 @@
 # coding=utf-8
 from django.contrib import admin
-from .models import OJ, RobotUser, RobotStatusInfo, Problem, Submission, APIKey
+from .models import OJ, RobotUser, RobotStatusInfo, Problem, Submission, APIKey, SubmissionWaitingQueue
 
 
 class APIKeyAdmin(admin.ModelAdmin):
@@ -44,3 +44,6 @@ class SubmissionAdmin(admin.ModelAdmin):
     list_display = ["api_key", "problem", "language", "result", "create_time", "status"]
 
 admin.site.register(Submission, SubmissionAdmin)
+
+
+admin.site.register(SubmissionWaitingQueue)

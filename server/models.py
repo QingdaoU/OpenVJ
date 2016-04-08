@@ -1,8 +1,14 @@
 # coding=utf-8
 from __future__ import unicode_literals
+import os
+import hashlib
 
 from django.db import models
 from robots.utils import Language, Result
+
+
+def rand_str():
+    return hashlib.md5(os.urandom(32)).hexdigest()
 
 
 class OJ(models.Model):
@@ -18,7 +24,7 @@ class OJ(models.Model):
 
 
 class APIKey(models.Model):
-    api_key = models.CharField(max_length=40)
+    api_key = models.CharField(max_length=40, default=rand_str)
     name = models.CharField(max_length=40)
     is_valid = models.BooleanField(default=True)
     create_time= models.DateTimeField(auto_now_add=True)
@@ -70,6 +76,7 @@ class ProblemStatus(models.Model):
 
 
 class Problem(models.Model):
+    id = models.CharField(max_length=40, primary_key=True, db_index=True, default=rand_str)
     oj = models.ForeignKey(OJ)
     url = models.URLField()
     origin_id = models.CharField(max_length=30, blank=True, null=True)
@@ -108,10 +115,13 @@ class SubmissionStatus(object):
 
 
 class Submission(models.Model):
+    id = models.CharField(max_length=40, primary_key=True, db_index=True, default=rand_str)
+    origin_submission_id = models.CharField(max_length=30, blank=True, null=True)
     api_key = models.ForeignKey(APIKey)
     problem = models.ForeignKey(Problem)
-    robot_user = models.ForeignKey(RobotUser)
+    robot_user = models.ForeignKey(RobotUser, blank=True, null=True)
     language = models.IntegerField(choices=((Language.C, "C", ), (Language.CPP, "CPP"), (Language.Java, "Java")))
+    code = models.TextField(blank=True, null=True)
     result = models.IntegerField(choices=((Result.accepted, "accepted"),
                                           (Result.wrong_answer, "wrong_answer"),
                                           (Result.compile_error, "compiler_error"),
@@ -121,14 +131,23 @@ class Submission(models.Model):
                                           (Result.runtime_error, "runtime_error"),
                                           (Result.system_error, "system_error"),
                                           (Result.waiting, "waiting")))
-    cpu_time = models.IntegerField()
-    memory = models.IntegerField()
-    info = models.TextField()
+    cpu_time = models.IntegerField(blank=True, null=True)
+    memory = models.IntegerField(blank=True, null=True)
+    info = models.TextField(blank=True, null=True)
     create_time = models.DateTimeField(auto_now_add=True)
     status = models.IntegerField(choices=((SubmissionStatus.done, "done"),
-                                          (SubmissionStatus, "crawling"),
-                                          (SubmissionStatus.failed, "failed")))
+                                          (SubmissionStatus, "crawling")))
+    task_id = models.CharField(max_length=40, blank=True, null=True)
+    submit_task_id = models.CharField(max_length=40, blank=True, null=True)
 
     class Meta:
         db_table = "submission"
+
+
+class SubmissionWaitingQueue(models.Model):
+    submission = models.ForeignKey(Submission)
+    create_time = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table= "submission_waiting_queue"
 
