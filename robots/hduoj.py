@@ -1,6 +1,5 @@
 # coding=utf-8
 import re
-import requests
 from .robot import Robot
 from .exceptions import AuthFailed, RequestFailed, RegexError, SubmitProblemFailed
 from .utils import Language, Result
