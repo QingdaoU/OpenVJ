@@ -42,6 +42,7 @@ admin.site.register(Problem, ProblemAdmin)
 
 class SubmissionAdmin(admin.ModelAdmin):
     list_display = ["api_key", "problem", "language", "result", "create_time", "status"]
+    ordering = ["create_time"]
 
 admin.site.register(Submission, SubmissionAdmin)
 

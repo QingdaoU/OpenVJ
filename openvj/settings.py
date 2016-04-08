@@ -121,7 +121,8 @@ STATIC_URL = '/static/'
 
 CELERY_ROUTES = {
     'server.tasks.submit_dispatcher': {'queue': 'local'},
-    'server.tasks.release_robot_user': {'queue': 'local'},
+    'server.tasks.submit_waiting_submission': {'queue': 'local'},
     'server.tasks.update_submission': {'queue': 'local'},
-    'server.tasks.get_problem': {'queue': 'robot'}
+    'server.tasks.get_problem': {'queue': 'robot'},
+    'server.tasks.submit': {'queue': 'robot'},
 }
