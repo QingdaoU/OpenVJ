@@ -1,6 +1,5 @@
 # coding=utf-8
 import re
-import requests
 from .robot import Robot
 from .exceptions import AuthFailed, RequestFailed, RegexError, SubmitProblemFailed
 from .utils import Language, Result
@@ -95,7 +94,7 @@ class HduojRobot(Robot):
                                "Referer": submit_url})
 
         if r.status_code != 302:
-            raise SubmitProblemFailed("Faild to submit problem, url: %s, status code %d" % (submit_url, r.status_code))
+            raise SubmitProblemFailed("Failed to submit problem, url: %s, status code %d" % (submit_url, r.status_code))
 
     def get_result(self, submission_id, username):
         status_url = r"http://acm.hdu.edu.cn/status.php?&user=" + username
