@@ -106,7 +106,7 @@ class PATRobot(Robot):
                      cookies=self.cookies,
                      headers={"Referer": "https://www.patest.cn/"})
         self.check_status_code(r)
-        data = re.compile(r"<td>\s*<span class='submitRes-(\d+)'>\s*<a[\s\S]*?>([\s\S]*?)</a>\s*</span>\s*</td>\s*"
+        data = re.compile(r"<td><span class='submitRes-(\d+)'>([\s\S]*?)</span></td>\s*"
                           r"<td>[\s\S]*?</td>\s*"
                           r"<td>[\s\S]*?</td>\s*"
                           r"<td>[\s\S]*?</td>\s*"
@@ -124,7 +124,7 @@ class PATRobot(Robot):
         elif code == 3:
             result = Result.accepted
         # 部分正确 答案错误
-        elif code == [4, 6]:
+        elif code in [4, 6]:
             result = Result.wrong_answer
         # 格式错误
         elif code == 5:
