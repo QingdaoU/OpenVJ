@@ -31,6 +31,3 @@ REDIS = {
 # celery配置
 BROKER_URL = "redis://{host}:{port}/{db}".format(host=REDIS["HOST"], port=REDIS["PORT"], db=0)
 CELERY_RESULT_BACKEND = "redis"
-CELERY_REDIS_HOST = REDIS["HOST"]
-CELERY_REDIS_PORT = REDIS["PORT"]
-CELERY_REDIS_DB = 0
