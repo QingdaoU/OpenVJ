@@ -130,6 +130,8 @@ class PojRobot(Robot):
             result = Result.compile_error
         elif code == "System Error":
             result = Result.system_error
+        elif code == "Waiting":
+            result = Result.waiting
         else:
             result = Result.runtime_error
 
