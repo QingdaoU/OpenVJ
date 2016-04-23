@@ -67,6 +67,8 @@ class CodeForcesRobot(Robot):
         output_samples = re.compile(output_samples_regex).findall(r.text)
         for i in range(len(input_samples)):
             data["samples"].append({"input": self._clean_html(input_samples[i]), "output": self._clean_html(output_samples[i])})
+        data["id"] = re.compile("problem/([\s\S]*)").findall(url)
+        data["submit_url"] = "http://codeforces.com/problemset/submit"
         return data
 
     def submit(self, submit_url, language, code, origin_id):
