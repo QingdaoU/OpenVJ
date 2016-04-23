@@ -10,6 +10,9 @@ class PojRobot(Robot):
         regex = r"^http://poj.org/problem\?id=[1-9]\d{3}$"
         return re.compile(regex).match(url) is not None
 
+    def save(self):
+        return {"cookies": self.cookies}
+
     def login(self, username, password):
         r = self.post("http://poj.org/login",
                       data={"user_id1": username,
@@ -19,10 +22,11 @@ class PojRobot(Robot):
                       headers={"Content-Type": "application/x-www-form-urlencoded",
                                "Referer": "http://poj.org/"})
 
-        # 登陆成功会重定向到首页,否则200返回错误页面
-        if r.status_code != 302:
-            raise AuthFailed("Failed to login Poj")
+        # 成功失败都是302
+        self.check_status_code(r, 302)
         self.cookies = dict(r.cookies)
+        if not self.is_logged_in:
+            raise AuthFailed("Failed to log in POJ")
 
     @property
     def is_logged_in(self):
@@ -46,7 +50,7 @@ class PojRobot(Robot):
                  }
         problem_id = re.compile(r"\d{4}").search(url).group()
         data = self._regex_page(url, regex)
-        data["problem_id"] = problem_id
+        data["id"] = problem_id
         data["submit_url"] = "http://poj.org/submit"
         return data
 
