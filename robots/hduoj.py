@@ -10,6 +10,9 @@ class HduojRobot(Robot):
         regex = r"^http://acm.hdu.edu.cn/showproblem.php\?pid=\d{4}$"
         return re.compile(regex).match(url) is not None
 
+    def save(self):
+        return {"cookies": self.cookies}
+
     def login(self, username, password):
         r = self.post("http://acm.hdu.edu.cn/userloginex.php?action=login",
                       data={"username": username,
@@ -73,7 +76,7 @@ class HduojRobot(Robot):
                  "samples": r'Courier New,Courier,monospace;">([\s\S]*?)(?:<div|</div>)'}
         problem_id = re.compile(r"\d{4}").search(url).group()
         data = self._regex_page(url, regex)
-        data["problem_id"] = problem_id
+        data["id"] = problem_id
         data["submit_url"] = "http://acm.hdu.edu.cn/submit.php?action=submit"
         return data
 
