@@ -6,7 +6,7 @@ from rest_framework.views import APIView
 from celery import states
 
 from robots.utils import Result
-from .serializers import ProblemSerializer, CreateSubmissionSerializer
+from .serializers import ProblemSerializer, CreateSubmissionSerializer, SubmissionSerializer
 from .models import (OJ, Problem, RobotUser, RobotStatusInfo, ProblemStatus,
                      Submission, APIKey, SubmissionStatus, RobotUserStatus, SubmissionWaitingQueue)
 from .tasks import get_problem, submit_dispatcher
@@ -19,6 +19,10 @@ class ProblemAPIView(APIView):
         url = request.GET.get("url")
         if not (oj and url):
             return error_response("参数错误")
+        try:
+            api_key = request.META.get("HTTP_APIKEY", "d4f82f56514165f9f82bc6d434f02615")
+        except APIKey.DoesNotExist:
+            return error_response("需要api_key")
         try:
             problem = Problem.objects.get(url=url, is_valid=True)
             # 如果已经爬取完成,就直接返回数据库中的结果
@@ -86,7 +90,13 @@ class SubmissionAPIView(APIView):
             if not oj.is_valid:
                 return error_response("oj不存在")
 
-            submission = Submission.objects.create(api_key=APIKey.objects.all()[0],  # fixme
+            try:
+                api_key = request.META.get("HTTP_APIKEY", "d4f82f56514165f9f82bc6d434f02615")
+                api_key = APIKey.objects.get(api_key=api_key, is_valid=True)
+            except APIKey.DoesNotExist:
+                return error_response("需要api_key")
+
+            submission = Submission.objects.create(api_key=api_key,
                                                    code=data["code"],
                                                    problem=problem,
                                                    language=data["language"],
@@ -113,7 +123,9 @@ class SubmissionAPIView(APIView):
         else:
             return serializer_invalid_response(serializer)
 
-
-'''
-{"problem_id": "d02cbf0f1bba9a6df795efaedcaace31", "language": 1, "code": "xxxxxx"}
-'''
+    def get(self, request):
+        submission_id = request.GET.get("submission_id")
+        if not submission_id:
+            return error_response("参数错误")
+        submission = Submission.objects.get(id=submission_id)
+        return success_response(SubmissionSerializer(submission).data)
