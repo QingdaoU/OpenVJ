@@ -25,6 +25,8 @@ openvj_server:
     links:
         - redis:redis
         - mysql:mysql
+    volumes:
+        - /home/vj_log:/code/log
     ports:
         - "127.0.0.1:8090:8080"
     environment:
