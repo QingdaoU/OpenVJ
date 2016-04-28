@@ -1,0 +1,6 @@
+django
+pymysql
+celery
+requests
+djangorestframework
+redis

@@ -117,6 +117,21 @@ STATIC_URL = '/static/'
 
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
+
+def _redis_password():
+    password = REDIS_LOCAL_QUEUE.get("password")
+    if password:
+        return password + "@"
+    else:
+        return ""
+
+# celery配置
+BROKER_URL = "redis://{password}{host}:{port}/{db}".format(password=_redis_password(),
+                                                           host=REDIS_LOCAL_QUEUE["host"],
+                                                           port=REDIS_LOCAL_QUEUE["port"],
+                                                           db=REDIS_LOCAL_QUEUE["db"])
+CELERY_RESULT_BACKEND = "redis"
+
 CELERY_ROUTES = {
     'server.tasks.submit_dispatcher': {'queue': 'local'},
     'server.tasks.submit_waiting_submission': {'queue': 'local'},

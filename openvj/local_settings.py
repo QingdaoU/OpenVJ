@@ -21,14 +21,8 @@ DATABASES = {
     }
 }
 
-
-REDIS = {
-    "HOST": "127.0.0.1",
-    "PORT": 6379,
-    "PASSWORD": "123456"
+REDIS_LOCAL_QUEUE = {
+    "host": "127.0.0.1",
+    "port": 6379,
+    "db": 3
 }
-
-
-# celery配置
-BROKER_URL = "redis://{host}:{port}/{db}".format(host=REDIS["HOST"], port=REDIS["PORT"], db=0)
-CELERY_RESULT_BACKEND = "redis"
