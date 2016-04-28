@@ -7,17 +7,31 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
+ALLOWED_HOSTS = ['*']
 
 # Database
 # https://docs.djangoproject.com/en/1.9/ref/settings/#databases
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': "oj",
+        'CONN_MAX_AGE': 0.1,
+        'HOST': os.environ["MYSQL_PORT_3306_TCP_ADDR"],
+        'PORT': 3306,
+        'USER': os.environ["MYSQL_ENV_MYSQL_USER"],
+        'PASSWORD': os.environ["MYSQL_ENV_MYSQL_ROOT_PASSWORD"]
     }
 }
 
-BROKER_URL = 'amqp://guest:guest@localhost//'
+REDIS_QUEUE = {
+    "host": os.environ["REDIS_PORT_6379_TCP_ADDR"],
+    "port": 6379,
+    "db": 3
+}
+
+# celery配置
+BROKER_URL = 'redis://%s:%s/%s' % (REDIS_QUEUE["host"], str(REDIS_QUEUE["port"]), str(REDIS_QUEUE["db"]))
+CELERY_RESULT_BACKEND = "redis"

@@ -1,12 +1,12 @@
 redis:
     image: redis
-#    volumes:
-#        - /home/data/redis:/data
+    volumes:
+        - /home/data/vj_redis:/data
 
 mysql:
     image: mysql
-#    volumes:
-#        - /home/data/mysql:/var/lib/mysql
+    volumes:
+        - /home/data/vj_mysql:/var/lib/mysql
     environment:
         - MYSQL_ROOT_PASSWORD={YOUR_PASSWORD}
 
@@ -17,8 +17,8 @@ openvj_server:
     links:
         - redis:redis
         - mysq;:mysql
-ports:
-    - "127.0.0.1:8090:8080"
-environment:
-    - vj_env=server
-    - MYSQL_ENV_MYSQL_USER=root
+  ports:
+      - "127.0.0.1:8090:8080"
+  environment:
+      - vj_env=server
+      - MYSQL_ENV_MYSQL_USER=root
