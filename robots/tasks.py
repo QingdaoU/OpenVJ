@@ -1,6 +1,6 @@
+# coding=utf-8
 import time
 import os
-import redis
 
 from celery import Celery
 from .utils import Result

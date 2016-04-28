@@ -125,7 +125,6 @@ def _redis_password():
     else:
         return ""
 
-# celery配置
 BROKER_URL = "redis://{password}{host}:{port}/{db}".format(password=_redis_password(),
                                                            host=REDIS_LOCAL_QUEUE["host"],
                                                            port=REDIS_LOCAL_QUEUE["port"],
@@ -138,4 +137,38 @@ CELERY_ROUTES = {
     'server.tasks.update_submission': {'queue': 'local'},
     'server.tasks.get_problem': {'queue': 'robot'},
     'server.tasks.submit': {'queue': 'robot'},
+}
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': True,
+    'formatters': {
+        'standard': {
+            'format': '%(asctime)s [%(threadName)s:%(thread)d] [%(name)s:%(lineno)d] [%(module)s:%(funcName)s] [%(levelname)s]- %(message)s'}
+    },
+    'handlers': {
+        'django_error': {
+            'level': 'INFO',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': 'log/django.log',
+            'formatter': 'standard'
+        },
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'standard'
+        }
+    },
+    'loggers': {
+        'django.request': {
+            'handlers': ['django_error', 'console'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+        'django.db.backends': {
+            'handlers': ['django_error', 'console'],
+            'level': 'ERROR',
+            'propagate': True,
+        }
+    },
 }
