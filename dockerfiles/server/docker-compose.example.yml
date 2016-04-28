@@ -5,13 +5,9 @@ redis:
     ports:
         - "0.0.0.0:3306:3306"
     command:
-        - redis-server
-        - /usr/local/etc/redis/redis.conf
-        - --requirepass $REDIS_PASSWORD
+        - redis-server --requirepass {VERY_IMPORTANT_PLEASE_CHANGE_THIS_PASSWORD}
     environment:
         - robot_env=server
-        # Please change this password to a long random string!!!
-        - REDIS_PASSWORD=
 
 mysql:
     image: mysql
@@ -32,3 +28,4 @@ openvj_server:
     environment:
         - vj_env=server
         - MYSQL_ENV_MYSQL_USER=root
+        - REDIS_PASSWORD={REDIS_PASSWORD}
