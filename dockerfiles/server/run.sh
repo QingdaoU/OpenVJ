@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-if [ ! -f "/code/openoj/custom_settings.py" ]; then
+if [ ! -f "/code/openvj/custom_settings.py" ]; then
  cp /code/openvj/custom_settings.example.py /code/openvj/custom_settings.py
  echo "SECRET_KEY=\"`cat /dev/urandom | head -1 | md5sum | head -c 32`\"" >> /code/openvj/custom_settings.py
 fi
