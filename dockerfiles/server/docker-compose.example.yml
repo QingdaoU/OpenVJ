@@ -6,7 +6,7 @@ redis:
         - "0.0.0.0:3306:3306"
     command:
         - redis-server
-        - /etc/redis/redis.conf
+        - /usr/local/etc/redis/redis.conf
         - --requirepass $REDIS_PASSWORD
     environment:
         - robot_env=server
