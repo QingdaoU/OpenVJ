@@ -14,7 +14,7 @@ https://docs.djangoproject.com/en/1.9/ref/settings/
 import os
 
 # 判断运行环境
-ENV = os.environ.get("oj_env", "local")
+ENV = os.environ.get("vj_env", "local")
 
 if ENV == "local":
     from .local_settings import *
