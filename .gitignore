@@ -64,5 +64,6 @@ tmp/
 test_case/
 release/
 upload/
+static/
 custom_settings.py
 docker-compose.yml

@@ -115,6 +115,8 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+
 CELERY_ROUTES = {
     'server.tasks.submit_dispatcher': {'queue': 'local'},
     'server.tasks.submit_waiting_submission': {'queue': 'local'},
