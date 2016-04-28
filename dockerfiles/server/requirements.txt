@@ -4,5 +4,4 @@ celery
 requests
 djangorestframework
 redis
-supervisor
 gunicorn
