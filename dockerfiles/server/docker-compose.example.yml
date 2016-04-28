@@ -16,9 +16,9 @@ openvj_server:
         - /home/openvj:/code
     links:
         - redis:redis
-        - mysq;:mysql
-  ports:
-      - "127.0.0.1:8090:8080"
-  environment:
-      - vj_env=server
-      - MYSQL_ENV_MYSQL_USER=root
+        - mysql:mysql
+    ports:
+        - "127.0.0.1:8090:8080"
+    environment:
+        - vj_env=server
+        - MYSQL_ENV_MYSQL_USER=root
