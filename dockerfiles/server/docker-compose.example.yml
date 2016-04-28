@@ -3,7 +3,7 @@ redis:
     volumes:
         - /home/data/vj_redis:/data
     ports:
-        - "0.0.0.0:3306:3306"
+        - "0.0.0.0:6379:6379"
     command:
         - redis-server
         - --requirepass
