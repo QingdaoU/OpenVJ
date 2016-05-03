@@ -21,8 +21,9 @@ DATABASES = {
     }
 }
 
-REDIS_LOCAL_QUEUE = {
+REDIS_QUEUE = {
     "host": "127.0.0.1",
     "port": 6379,
-    "db": 3
+    "db": 3,
+    "password": ":" + os.environ["REDIS_PASSWORD"] + "@"
 }

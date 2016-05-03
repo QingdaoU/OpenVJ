@@ -117,18 +117,18 @@ STATIC_URL = '/static/'
 
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
-BROKER_URL = "redis://{password}{host}:{port}/{db}".format(password=REDIS_LOCAL_QUEUE.get("password", ""),
-                                                           host=REDIS_LOCAL_QUEUE["host"],
-                                                           port=REDIS_LOCAL_QUEUE["port"],
-                                                           db=REDIS_LOCAL_QUEUE["db"])
-CELERY_RESULT_BACKEND = "redis"
+CELERY_RESULT_BACKEND = BROKER_URL = "redis://{password}{host}:{port}/{db}".format(
+    password=REDIS_QUEUE.get("password", ""),
+    host=REDIS_QUEUE["host"],
+    port=REDIS_QUEUE["port"],
+    db=REDIS_QUEUE["db"])
 
 CELERY_ROUTES = {
     'server.tasks.submit_dispatcher': {'queue': 'local'},
     'server.tasks.submit_waiting_submission': {'queue': 'local'},
     'server.tasks.update_submission': {'queue': 'local'},
-    'server.tasks.get_problem': {'queue': 'robot'},
-    'server.tasks.submit': {'queue': 'robot'},
+    'robot.tasks.get_problem': {'queue': 'robot'},
+    'robot.tasks.submit': {'queue': 'robot'},
 }
 
 LOGGING = {

@@ -3,7 +3,7 @@ from __future__ import absolute_import
 import time
 import json
 
-from openvj import celery_app
+from openvj import celery_app as app
 from robots.tasks import submit, get_problem
 from .models import RobotUserStatus, SubmissionStatus, SubmissionWaitingQueue
 
@@ -14,7 +14,7 @@ def release_robot_user(robot_user):
 
 
 # local task
-@celery_app.task
+@app.task
 def submit_waiting_submission(submit_result, problem, robot, robot_user):
     waiting_queue = SubmissionWaitingQueue.objects.all().order_by("create_time")
     if waiting_queue.exists():
@@ -29,7 +29,7 @@ def submit_waiting_submission(submit_result, problem, robot, robot_user):
 
 
 # local task
-@celery_app.task
+@app.task
 def update_submission(submit_result, submission):
     submission.origin_submission_id = submit_result["origin_submission_id"]
     submission.result = submit_result["result"]
@@ -41,7 +41,7 @@ def update_submission(submit_result, submission):
 
 
 # local task
-@celery_app.task
+@app.task
 def submit_dispatcher(problem, submission, robot_user, robot):
     task_id = submit.apply_async(args=(robot, robot_user, problem.submit_url, problem.origin_id,
                                        submission.language, submission.code),

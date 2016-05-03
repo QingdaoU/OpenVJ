@@ -2,36 +2,8 @@
 import time
 import os
 
-from celery import Celery
+from openvj import celery_app as app
 from .utils import Result
-
-if os.environ.get("robot_env", "local") == "local":
-    REDIS_ROBOT_QUEUE = {
-        "host": "127.0.0.1",
-        "port": 6379,
-        "db": 3
-    }
-else:
-    REDIS_ROBOT_QUEUE = {
-        "host": os.environ["REDIS_PORT_6379_TCP_ADDR"],
-        "port": 6379,
-        "db": 3,
-        "password": os.environ["REDIS_PASSWORD"]
-    }
-
-
-def _redis_password():
-    password = REDIS_ROBOT_QUEUE.get("password")
-    if password:
-        return password + "@"
-    else:
-        return ""
-
-
-app = Celery('tasks', broker="redis://{password}{host}:{port}/{db}".format(password=_redis_password(),
-                                                                           host=REDIS_ROBOT_QUEUE["host"],
-                                                                           port=REDIS_ROBOT_QUEUE["port"],
-                                                                           db=REDIS_ROBOT_QUEUE["db"]))
 
 
 # remote robot task
