@@ -1,6 +1,0 @@
-django
-mysqlclient
-celery
-requests
-djangorestframework
-redis

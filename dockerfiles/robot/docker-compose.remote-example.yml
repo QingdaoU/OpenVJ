@@ -1,5 +1,0 @@
-robot:
-    image: robot
-    environment:
-        - REDIS_PORT_6379_TCP_ADDR=
-        - REDIS_PASSWORD=

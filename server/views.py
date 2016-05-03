@@ -13,6 +13,9 @@ from .tasks import get_problem, submit_dispatcher
 from .utils import success_response, error_response, serializer_invalid_response, import_class
 
 
+demo_key = "977c723a4f93ed311f052e6fad51728b"
+
+
 class ProblemAPIView(APIView):
     def get(self, request):
         oj = request.GET.get("oj")
@@ -20,7 +23,7 @@ class ProblemAPIView(APIView):
         if not (oj and url):
             return error_response("参数错误")
         try:
-            api_key = request.META.get("HTTP_APIKEY", "d4f82f56514165f9f82bc6d434f02615")
+            api_key = APIKey.objects.get(api_key=request.META.get("HTTP_APIKEY", demo_key), is_valid=True)
         except APIKey.DoesNotExist:
             return error_response("需要api_key")
         try:
@@ -91,8 +94,7 @@ class SubmissionAPIView(APIView):
                 return error_response("oj不存在")
 
             try:
-                api_key = request.META.get("HTTP_APIKEY", "d4f82f56514165f9f82bc6d434f02615")
-                api_key = APIKey.objects.get(api_key=api_key, is_valid=True)
+                api_key = APIKey.objects.get(api_key=request.META.get("HTTP_APIKEY", demo_key), is_valid=True)
             except APIKey.DoesNotExist:
                 return error_response("需要api_key")
 
