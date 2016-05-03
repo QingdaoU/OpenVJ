@@ -30,5 +30,5 @@ REDIS_LOCAL_QUEUE = {
     "host": os.environ["REDIS_PORT_6379_TCP_ADDR"],
     "port": 6379,
     "db": 3,
-    "password": os.environ["REDIS_PASSWORD"]
+    "password": ":" + os.environ["REDIS_PASSWORD"] + "@"
 }

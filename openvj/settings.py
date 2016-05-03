@@ -117,15 +117,7 @@ STATIC_URL = '/static/'
 
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
-
-def _redis_password():
-    password = REDIS_LOCAL_QUEUE.get("password")
-    if password:
-        return password + "@"
-    else:
-        return ""
-
-BROKER_URL = "redis://{password}{host}:{port}/{db}".format(password=_redis_password(),
+BROKER_URL = "redis://{password}{host}:{port}/{db}".format(password=REDIS_LOCAL_QUEUE.get("password", ""),
                                                            host=REDIS_LOCAL_QUEUE["host"],
                                                            port=REDIS_LOCAL_QUEUE["port"],
                                                            db=REDIS_LOCAL_QUEUE["db"])
