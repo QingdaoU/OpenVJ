@@ -127,8 +127,8 @@ CELERY_ROUTES = {
     'server.tasks.submit_dispatcher': {'queue': 'local'},
     'server.tasks.submit_waiting_submission': {'queue': 'local'},
     'server.tasks.update_submission': {'queue': 'local'},
-    'robot.tasks.get_problem': {'queue': 'robot'},
-    'robot.tasks.submit': {'queue': 'robot'},
+    'robots.tasks.get_problem': {'queue': 'robot'},
+    'robots.tasks.submit': {'queue': 'robot'},
 }
 
 LOGGING = {
