@@ -15,18 +15,18 @@ class CodeForcesRobot(Robot):
         return {"cookies": self.cookies, "token": self.token}
 
     def check_url(self, url):
-        return re.compile(r"^http://codeforces.com/problemset/problem/\d+/[A-Z]$").match(url) is not None
+        return re.compile(r"^https://codeforces.com/problemset/problem/\d+/[A-Z]$").match(url) is not None
 
     def _get_token(self):
-        r = self.get("http://codeforces.com/problemset", headers={"Referer": "http://codeforces.com/problemset"}, cookies=self.cookies)
+        r = self.get("https://codeforces.com/problemset", headers={"Referer": "http://codeforces.com/problemset"}, cookies=self.cookies)
         self.check_status_code(r)
         self.token = re.compile(r'<meta name="X-Csrf-Token" content="([\s\S]*?)"/>').findall(r.text)[0]
         self.cookies.update(dict(r.cookies))
 
     def login(self, username, password):
         self._get_token()
-        r = self.post("http://codeforces.com/enter",
-                      data={"csrf_token": self.token, "action": "enter", "handle": username,
+        r = self.post("https://codeforces.com/enter",
+                      data={"csrf_token": self.token, "action": "enter", "handleOrEmail": username,
                             "password": password, "remember": "on"},
                       cookies=self.cookies)
         if r.status_code != 302:
@@ -36,7 +36,7 @@ class CodeForcesRobot(Robot):
 
     @property
     def is_logged_in(self):
-        r = self.get("http://codeforces.com/settings/general", cookies=self.cookies)
+        r = self.get("https://codeforces.com/settings/general", cookies=self.cookies)
         return r.status_code == 200
 
     def get_problem(self, url):
@@ -68,7 +68,7 @@ class CodeForcesRobot(Robot):
         for i in range(len(input_samples)):
             data["samples"].append({"input": self._clean_html(input_samples[i]), "output": self._clean_html(output_samples[i])})
         data["id"] = re.compile("problem/([\s\S]*)").findall(url)
-        data["submit_url"] = "http://codeforces.com/problemset/submit"
+        data["submit_url"] = "https://codeforces.com/problemset/submit"
         return data
 
     def submit(self, submit_url, language, code, origin_id):
@@ -100,7 +100,7 @@ class CodeForcesRobot(Robot):
             raise SubmitProblemFailed("Failed to submit problem, url: %s code %d" % (submit_url, r.status_code))
 
     def get_result(self, submission_id, username):
-        status_url = "http://codeforces.com/api/user.status?handle=" + username + "&from=1&count=1"
+        status_url = "https://codeforces.com/api/user.status?handle=" + username + "&from=1&count=1"
         s = json.loads(self.get(status_url).text)
         data = {}
         data["cpu_time"] = s["result"][0]["timeConsumedMillis"]
@@ -130,7 +130,7 @@ class CodeForcesRobot(Robot):
 
         data["info"] = {"result_text": "", "error": None}
         if data["result"] == Result.compile_error:
-            e = self.post("http://codeforces.com/data/judgeProtocol",
+            e = self.post("https://codeforces.com/data/judgeProtocol",
                           headers={"Referer": "http://codeforces.com/submissions/" + username,
                                    "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
                                    "X-Csrf-Token": self.token,
@@ -141,4 +141,3 @@ class CodeForcesRobot(Robot):
             self.check_status_code(e)
             data["info"] = {"result_text": "Compilation error", "error": json.loads(e.text)}
         return data
-
